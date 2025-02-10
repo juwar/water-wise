@@ -19,7 +19,7 @@ export default async function DashboardLayout({
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <div className="mr-4 flex">
-            <Link className="mr-6 flex items-center space-x-2" href="/">
+            <Link className="mr-6 flex items-center space-x-2" href={user ? '/dashboard' : '/'}>
               <span className="font-bold">Water Wise</span>
             </Link>
           </div>
@@ -30,11 +30,6 @@ export default async function DashboardLayout({
             {user.role === "admin" && (
               <Link href="/admin" className="transition-colors hover:text-foreground/80">
                 Admin
-              </Link>
-            )}
-            {(user.role === "admin" || user.role === "officer") && (
-              <Link href="/officer" className="transition-colors hover:text-foreground/80">
-                Officer
               </Link>
             )}
           </nav>

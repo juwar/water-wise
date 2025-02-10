@@ -75,17 +75,32 @@ export default async function DashboardPage() {
       .where(sql`${meterReadings.recordedAt} >= ${lastWeek.toISOString()}`)
       .then(rows => rows[0].count);
 
-    // Get all users with their usage statistics
+    // Get all users with their latest readings and usage statistics
     const allUsers = await db
       .select({
         id: users.id,
         name: users.name,
         nik: users.nik,
         region: users.region,
-        address: users.address,
         createdAt: users.createdAt,
+        readingId: meterReadings.id,
+        meterNow: meterReadings.meterNow,
+        meterBefore: meterReadings.meterBefore,
+        recordedAt: meterReadings.recordedAt,
       })
       .from(users)
+      .leftJoin(
+        meterReadings,
+        and(
+          eq(users.id, meterReadings.userId),
+          sql`${meterReadings.id} IN (
+            SELECT id FROM meter_readings mr2 
+            WHERE mr2.user_id = ${users.id} 
+            ORDER BY mr2.recorded_at DESC 
+            LIMIT 1
+          )`
+        )
+      )
       .where(eq(users.role, "user"));
 
     // Calculate usage statistics for each user
@@ -127,6 +142,10 @@ export default async function DashboardPage() {
           ...user,
           monthlyUsage,
           totalUsage,
+          readingId: user.readingId,
+          meterNow: user.meterNow,
+          meterBefore: user.meterBefore,
+          recordedAt: user.recordedAt
         };
       })
     );

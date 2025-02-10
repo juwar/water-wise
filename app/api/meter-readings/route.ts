@@ -16,13 +16,11 @@ const updateSchema = z.object({
   meterNow: z.number().int().positive(),
 });
 
-// Helper function to check if a reading exists for today
-async function hasReadingForToday(userId: number) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+// Helper function to check if a reading exists for this month
+async function hasReadingThisMonth(userId: number) {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   const existingReading = await db
     .select({ id: meterReadings.id })
@@ -30,8 +28,8 @@ async function hasReadingForToday(userId: number) {
     .where(
       and(
         eq(meterReadings.userId, userId),
-        gte(meterReadings.recordedAt, today),
-        lte(meterReadings.recordedAt, tomorrow)
+        gte(meterReadings.recordedAt, startOfMonth),
+        lte(meterReadings.recordedAt, endOfMonth)
       )
     )
     .limit(1);
@@ -108,11 +106,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if a reading already exists for today
-    const hasReading = await hasReadingForToday(parseInt(validatedData.userId));
+    // Check if a reading already exists for this month
+    const hasReading = await hasReadingThisMonth(parseInt(validatedData.userId));
     if (hasReading) {
       return NextResponse.json(
-        { message: "A reading has already been recorded for this user today" },
+        { message: "A reading has already been recorded for this user this month" },
         { status: 400 }
       );
     }

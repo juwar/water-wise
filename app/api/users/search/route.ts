@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { db } from "@/lib/db";
-import { users } from "@/db/schema";
-import { or, ilike } from "drizzle-orm";
+import { users, meterReadings } from "@/db/schema";
+import { or, ilike, eq, and, sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,14 +22,39 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Get users with their latest meter reading
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
     const searchResults = await db
       .select({
         id: users.id,
         name: users.name,
         nik: users.nik,
         region: users.region,
+        address: users.address,
+        lastReading: meterReadings.meterNow,
+        hasReadingThisMonth: sql<boolean>`EXISTS (
+          SELECT 1 FROM meter_readings mr2 
+          WHERE mr2.user_id = ${users.id}
+          AND mr2.recorded_at >= ${startOfMonth.toISOString()}
+          AND mr2.recorded_at <= ${endOfMonth.toISOString()}
+        )`,
       })
       .from(users)
+      .leftJoin(
+        meterReadings,
+        and(
+          eq(users.id, meterReadings.userId),
+          sql`${meterReadings.id} IN (
+            SELECT id FROM meter_readings mr2 
+            WHERE mr2.user_id = ${users.id} 
+            ORDER BY mr2.recorded_at DESC 
+            LIMIT 1
+          )`
+        )
+      )
       .where(
         or(
           ilike(users.name, `%${query}%`),
@@ -38,7 +63,7 @@ export async function GET(req: NextRequest) {
       )
       .limit(10);
 
-    return NextResponse.json({ users: searchResults });
+    return NextResponse.json(searchResults);
   } catch (error) {
     console.error("[USERS_SEARCH]", error);
     return NextResponse.json(

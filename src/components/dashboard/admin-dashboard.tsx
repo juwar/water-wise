@@ -3,6 +3,9 @@
 import { useState } from "react"
 import { UserDetailsDialog } from "@/components/users/user-details-dialog"
 import { Button } from "@/components/ui/button"
+import { EditableMeter } from "@/components/meter-readings/editable-meter"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface AdminDashboardProps {
   userName: string
@@ -22,6 +25,10 @@ interface AdminDashboardProps {
     createdAt: Date | null
     monthlyUsage: number
     totalUsage: number
+    readingId: number | null
+    meterNow: number | null
+    meterBefore: number | null
+    recordedAt: Date | null
   }>
 }
 
@@ -36,6 +43,7 @@ export function AdminDashboard({
   lastWeek,
   usersWithStats,
 }: AdminDashboardProps) {
+  const router = useRouter()
   const [selectedUser, setSelectedUser] = useState<typeof usersWithStats[0] | null>(null)
 
   return (
@@ -119,8 +127,11 @@ export function AdminDashboard({
 
         {/* Users List */}
         <div className="rounded-lg border">
-          <div className="p-4 border-b">
-            <h2 className="text-xl font-semibold">Users List</h2>
+          <div className="p-4 border-b flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Record List</h2>
+            <Button asChild>
+              <Link href="/record">+ New Record</Link>
+            </Button>
           </div>
           <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -129,10 +140,10 @@ export function AdminDashboard({
                   <th className="p-4 font-medium">User</th>
                   <th className="p-4 font-medium">NIK</th>
                   <th className="p-4 font-medium">Region</th>
-                  <th className="p-4 font-medium">Address</th>
-                  <th className="p-4 font-medium">Registered At</th>
-                  <th className="p-4 font-medium">Monthly Usage</th>
-                  <th className="p-4 font-medium">Total Usage</th>
+                  <th className="p-4 font-medium">Previous Reading</th>
+                  <th className="p-4 font-medium">Current Reading</th>
+                  <th className="p-4 font-medium">Usage</th>
+                  <th className="p-4 font-medium">Recorded At</th>
                   <th className="p-4 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -142,17 +153,25 @@ export function AdminDashboard({
                     <td className="p-4">{userStats.name}</td>
                     <td className="p-4">{userStats.nik}</td>
                     <td className="p-4">{userStats.region}</td>
-                    <td className="p-4">{userStats.address || "N/A"}</td>
+                    <td className="p-4">{userStats.meterBefore || "No reading"}</td>
                     <td className="p-4">
-                      {userStats.createdAt 
-                        ? new Date(userStats.createdAt).toLocaleDateString()
+                      <EditableMeter
+                        readingId={userStats.readingId!}
+                        currentValue={userStats.meterNow}
+                        previousValue={userStats.meterBefore}
+                        isAdmin={role === "admin"}
+                        onUpdate={() => router.refresh()}
+                      />
+                    </td>
+                    <td className="p-4">
+                      {userStats.meterNow && userStats.meterBefore
+                        ? `${userStats.meterNow - userStats.meterBefore} m3`
                         : "N/A"}
                     </td>
                     <td className="p-4">
-                      {userStats.monthlyUsage > 0 ? `${userStats.monthlyUsage} m3` : 'No reading'}
-                    </td>
-                    <td className="p-4">
-                      {userStats.totalUsage > 0 ? `${userStats.totalUsage} m3` : 'No reading'}
+                      {userStats.recordedAt
+                        ? new Date(userStats.recordedAt).toLocaleDateString()
+                        : "N/A"}
                     </td>
                     <td className="p-4">
                       <Button
