@@ -49,7 +49,7 @@ export function LoginForm() {
       const from = searchParams.get("from") || "/dashboard";
       router.push(from);
       router.refresh();
-    } catch (error) {
+    } catch {
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);

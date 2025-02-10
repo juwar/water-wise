@@ -50,7 +50,7 @@ export function CheckRecordForm() {
       }
 
       setReadings(result.readings);
-    } catch (error) {
+    } catch {
       setError("Failed to fetch meter readings. Please try again.");
     } finally {
       setIsLoading(false);
