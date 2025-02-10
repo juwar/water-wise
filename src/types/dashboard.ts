@@ -10,6 +10,8 @@ export interface UserInfo {
   name: string | null
   nik: string
   region: string | null
+  address: string | null
+  createdAt: Date | null
 }
 
 export interface UserReadingsGroup {

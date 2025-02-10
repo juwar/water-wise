@@ -6,6 +6,8 @@ interface UserDashboardProps {
   userName: string
   userNik: string
   userRegion: string | null
+  userAddress: string
+  userCreatedAt: Date
   latestReading: UserReading | null
   previousReading: UserReading | null
   totalReadings: number
