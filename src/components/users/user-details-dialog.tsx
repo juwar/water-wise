@@ -253,27 +253,27 @@ export function UserDetailsDialog({
             </div>
 
             {/* Usage Statistics */}
-            <div className="grid gap-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Usage Statistics</h4>
-              <div className="grid gap-2">
-                {user.monthlyUsage !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Monthly Usage</span>
-                    <span className="text-sm text-muted-foreground">
-                      {user.monthlyUsage} m3
-                    </span>
+            {
+              user.monthlyUsage !== undefined || user.totalUsage !== undefined ? (
+                <div className="grid gap-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Usage Statistics</h4>
+                  <div className="grid gap-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Monthly Usage</span>
+                        <span className="text-sm text-muted-foreground">
+                          {user.monthlyUsage} m3
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Total Usage</span>
+                        <span className="text-sm text-muted-foreground">
+                          {user.totalUsage} m3
+                        </span>
+                      </div>
                   </div>
-                )}
-                {user.totalUsage !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Total Usage</span>
-                    <span className="text-sm text-muted-foreground">
-                      {user.totalUsage} m3
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
+              ) : null
+            }
           </div>
         </div>
       </DialogContent>

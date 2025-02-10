@@ -28,8 +28,8 @@ export default async function DashboardLayout({
               Dashboard
             </Link>
             {user.role === "admin" && (
-              <Link href="/admin" className="transition-colors hover:text-foreground/80">
-                Admin
+              <Link href="/users" className="transition-colors hover:text-foreground/80">
+                Users
               </Link>
             )}
           </nav>
