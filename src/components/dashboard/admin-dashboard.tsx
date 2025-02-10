@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { EditableReading } from "@/components/meter-readings/editable-reading"
 import { UserDetailsDialog } from "@/components/users/user-details-dialog"
 import { Button } from "@/components/ui/button"
 
@@ -19,12 +18,8 @@ interface AdminDashboardProps {
     name: string | null
     nik: string
     region: string | null
-    latestReading?: {
-      id: number
-      meterNow: number
-      meterBefore: number | null
-      recordedAt: Date | null
-    }
+    address: string | null
+    createdAt: Date | null
     monthlyUsage: number
     totalUsage: number
   }>
@@ -122,10 +117,10 @@ export function AdminDashboard({
           </div>
         </div>
 
-        {/* Users Meter Readings Table */}
+        {/* Users List */}
         <div className="rounded-lg border">
           <div className="p-4 border-b">
-            <h2 className="text-xl font-semibold">Users Meter Readings</h2>
+            <h2 className="text-xl font-semibold">Users List</h2>
           </div>
           <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -134,61 +129,46 @@ export function AdminDashboard({
                   <th className="p-4 font-medium">User</th>
                   <th className="p-4 font-medium">NIK</th>
                   <th className="p-4 font-medium">Region</th>
-                  <th className="p-4 font-medium">Previous</th>
-                  <th className="p-4 font-medium">Current</th>
+                  <th className="p-4 font-medium">Address</th>
+                  <th className="p-4 font-medium">Registered At</th>
                   <th className="p-4 font-medium">Monthly Usage</th>
                   <th className="p-4 font-medium">Total Usage</th>
-                  <th className="p-4 font-medium">Last Update</th>
                   <th className="p-4 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {usersWithStats.map((userStats) => {
-                  const reading = userStats.latestReading;
-                  return (
-                    <tr key={userStats.id} className="border-t">
-                      <td className="p-4">{userStats.name}</td>
-                      <td className="p-4">{userStats.nik}</td>
-                      <td className="p-4">{userStats.region}</td>
-                      <td className="p-4">{reading?.meterBefore || 'No reading'}</td>
-                      <td className="p-4">
-                        {reading ? (
-                          <EditableReading
-                            readingId={reading.id}
-                            currentValue={reading.meterNow}
-                            previousValue={reading.meterBefore}
-                          />
-                        ) : (
-                          'No reading'
-                        )}
-                      </td>
-                      <td className="p-4">
-                        {userStats.monthlyUsage > 0 ? `${userStats.monthlyUsage} m3` : 'No reading'}
-                      </td>
-                      <td className="p-4">
-                        {userStats.totalUsage > 0 ? `${userStats.totalUsage} m3` : 'No reading'}
-                      </td>
-                      <td className="p-4">
-                        {reading?.recordedAt 
-                          ? new Date(reading.recordedAt).toLocaleDateString()
-                          : 'Never'}
-                      </td>
-                      <td className="p-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedUser(userStats)}
-                        >
-                          View Details
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {usersWithStats.map((userStats) => (
+                  <tr key={userStats.id} className="border-t">
+                    <td className="p-4">{userStats.name}</td>
+                    <td className="p-4">{userStats.nik}</td>
+                    <td className="p-4">{userStats.region}</td>
+                    <td className="p-4">{userStats.address || "N/A"}</td>
+                    <td className="p-4">
+                      {userStats.createdAt 
+                        ? new Date(userStats.createdAt).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    <td className="p-4">
+                      {userStats.monthlyUsage > 0 ? `${userStats.monthlyUsage} m3` : 'No reading'}
+                    </td>
+                    <td className="p-4">
+                      {userStats.totalUsage > 0 ? `${userStats.totalUsage} m3` : 'No reading'}
+                    </td>
+                    <td className="p-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedUser(userStats)}
+                      >
+                        View Details
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
                 {usersWithStats.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="p-4 text-center text-muted-foreground">
-                      No readings recorded yet
+                    <td colSpan={8} className="p-4 text-center text-muted-foreground">
+                      No users found
                     </td>
                   </tr>
                 )}

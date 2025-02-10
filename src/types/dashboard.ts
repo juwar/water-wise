@@ -12,9 +12,6 @@ export interface UserInfo {
   region: string | null
   address: string | null
   createdAt: Date | null
-}
-
-export interface UserReadingsGroup {
-  user: UserInfo
-  readings: UserReading[]
+  monthlyUsage: number
+  totalUsage: number
 }

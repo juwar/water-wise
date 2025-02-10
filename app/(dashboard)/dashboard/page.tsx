@@ -6,13 +6,11 @@ import { meterReadings, users } from "@/db/schema"
 import { desc, eq, and, sql } from "drizzle-orm"
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard"
 import { UserDashboard } from "@/components/dashboard/user-dashboard"
-import type { UserReadingsGroup } from "@/types/dashboard"
 
 export const metadata: Metadata = {
   title: "Dashboard - Water Wise",
   description: "Manage your water meter readings",
 }
-
 
 // Helper function to calculate usage
 const calculateUsage = (meterNow: number, meterBefore: number | null) => {
@@ -20,14 +18,6 @@ const calculateUsage = (meterNow: number, meterBefore: number | null) => {
     return meterNow;
   }
   return meterNow - meterBefore;
-};
-
-// Helper function to check if date is in current month
-const isCurrentMonth = (date: Date | null) => {
-  if (!date) return false;
-  const now = new Date();
-  return date.getMonth() === now.getMonth() && 
-         date.getFullYear() === now.getFullYear();
 };
 
 // Helper function to ensure number type
@@ -85,69 +75,61 @@ export default async function DashboardPage() {
       .where(sql`${meterReadings.recordedAt} >= ${lastWeek.toISOString()}`)
       .then(rows => rows[0].count);
 
-    // Get all users with their readings
-    const allUsersReadings = await db
+    // Get all users with their usage statistics
+    const allUsers = await db
       .select({
-        userId: users.id,
-        userName: users.name,
-        userNik: users.nik,
-        userRegion: users.region,
-        readingId: meterReadings.id,
-        meterNow: meterReadings.meterNow,
-        meterBefore: meterReadings.meterBefore,
-        recordedAt: meterReadings.recordedAt,
+        id: users.id,
+        name: users.name,
+        nik: users.nik,
+        region: users.region,
+        address: users.address,
+        createdAt: users.createdAt,
       })
       .from(users)
-      .leftJoin(meterReadings, eq(users.id, meterReadings.userId))
-      .where(eq(users.role, "user"))
-      .orderBy(desc(meterReadings.recordedAt));
-
-    // Group readings by user
-    const userReadingsMap = allUsersReadings.reduce((acc, reading) => {
-      if (!acc[reading.userId]) {
-        acc[reading.userId] = {
-          user: {
-            id: reading.userId,
-            name: reading.userName,
-            nik: reading.userNik,
-            region: reading.userRegion,
-          },
-          readings: [],
-        };
-      }
-      if (reading.readingId && reading.meterNow !== null) {
-        acc[reading.userId].readings.push({
-          id: reading.readingId,
-          meterNow: ensureNumber(reading.meterNow),
-          meterBefore: reading.meterBefore,
-          recordedAt: reading.recordedAt,
-        });
-      }
-      return acc;
-    }, {} as Record<number, UserReadingsGroup>);
+      .where(eq(users.role, "user"));
 
     // Calculate usage statistics for each user
-    const usersWithStats = Object.values(userReadingsMap).map(({ user, readings }) => {
-      const latestReading = readings[0];
-      const monthlyReading = readings.find(r => r.recordedAt && isCurrentMonth(r.recordedAt));
-      
-      // Calculate total usage
-      const totalUsage = readings.reduce((sum, reading) => {
-        return sum + calculateUsage(reading.meterNow, reading.meterBefore);
-      }, 0);
+    const usersWithStats = await Promise.all(
+      allUsers.map(async (user) => {
+        // Get monthly usage
+        const userMonthlyReadings = await db
+          .select({
+            meterNow: meterReadings.meterNow,
+            meterBefore: meterReadings.meterBefore,
+          })
+          .from(meterReadings)
+          .where(
+            and(
+              eq(meterReadings.userId, user.id),
+              sql`${meterReadings.recordedAt} >= ${startOfMonth.toISOString()}`,
+              sql`${meterReadings.recordedAt} <= ${now.toISOString()}`
+            )
+          );
 
-      // Calculate monthly usage
-      const monthlyUsage = monthlyReading 
-        ? calculateUsage(monthlyReading.meterNow, monthlyReading.meterBefore)
-        : 0;
+        // Get total usage
+        const userTotalReadings = await db
+          .select({
+            meterNow: meterReadings.meterNow,
+            meterBefore: meterReadings.meterBefore,
+          })
+          .from(meterReadings)
+          .where(eq(meterReadings.userId, user.id));
 
-      return {
-        ...user,
-        latestReading,
-        totalUsage,
-        monthlyUsage,
-      };
-    });
+        const monthlyUsage = userMonthlyReadings.reduce((sum, reading) => {
+          return sum + calculateUsage(ensureNumber(reading.meterNow), reading.meterBefore);
+        }, 0);
+
+        const totalUsage = userTotalReadings.reduce((sum, reading) => {
+          return sum + calculateUsage(ensureNumber(reading.meterNow), reading.meterBefore);
+        }, 0);
+
+        return {
+          ...user,
+          monthlyUsage,
+          totalUsage,
+        };
+      })
+    );
 
     return (
       <AdminDashboard
@@ -187,8 +169,6 @@ export default async function DashboardPage() {
   // Calculate statistics for user view with updated usage calculation
   const totalReadings = userReadings.length;
   const latestReading = userReadings[0];
-  const previousReading = userReadings[1];
-  
   const totalUsage = userReadings.reduce((sum, reading) => {
     return sum + calculateUsage(ensureNumber(reading.meterNow), reading.meterBefore);
   }, 0);
@@ -198,18 +178,18 @@ export default async function DashboardPage() {
   const currentUsage = latestReading 
     ? calculateUsage(ensureNumber(latestReading.meterNow), latestReading.meterBefore)
     : 0;
-  const previousUsage = previousReading 
-    ? calculateUsage(ensureNumber(previousReading.meterNow), previousReading.meterBefore)
-    : 0;
-  const usageTrend = currentUsage - previousUsage;
+  const usageTrend = currentUsage - (userReadings[1] 
+    ? calculateUsage(ensureNumber(userReadings[1].meterNow), userReadings[1].meterBefore)
+    : 0);
 
   return (
     <UserDashboard
       userName={user.name ?? "User"}
       userNik={user.nik ?? ""}
       userRegion={userDetails?.region}
+      userAddress={userDetails?.address}
+      userCreatedAt={userDetails?.createdAt}
       latestReading={latestReading}
-      previousReading={previousReading}
       totalReadings={totalReadings}
       totalUsage={totalUsage}
       averageUsage={averageUsage}

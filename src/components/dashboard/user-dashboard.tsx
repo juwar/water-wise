@@ -6,10 +6,9 @@ interface UserDashboardProps {
   userName: string
   userNik: string
   userRegion: string | null
-  userAddress: string
-  userCreatedAt: Date
+  userAddress: string | null
+  userCreatedAt: Date | null
   latestReading: UserReading | null
-  previousReading: UserReading | null
   totalReadings: number
   totalUsage: number
   averageUsage: number
@@ -22,6 +21,8 @@ export function UserDashboard({
   userName,
   userNik,
   userRegion,
+  userAddress,
+  userCreatedAt,
   latestReading,
   totalReadings,
   totalUsage,
@@ -58,6 +59,16 @@ export function UserDashboard({
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Region</span>
                   <span className="text-sm font-medium">{userRegion || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Address</span>
+                  <span className="text-sm font-medium">{userAddress || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Registered At</span>
+                  <span className="text-sm font-medium">
+                    {userCreatedAt ? new Date(userCreatedAt).toLocaleDateString() : 'N/A'}
+                  </span>
                 </div>
               </div>
             </div>
