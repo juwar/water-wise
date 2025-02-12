@@ -18,3 +18,5 @@ declare module "next-auth/jwt" {
     role: string;
   }
 }
+
+export declare module 'next-auth' {}
