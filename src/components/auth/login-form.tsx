@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
@@ -16,7 +16,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export function LoginForm() {
+function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +57,8 @@ export function LoginForm() {
   }
 
   return (
-    <div className="grid gap-6">
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="grid gap-6">
+        <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-4">
           <div className="grid gap-2">
             <Input
@@ -91,8 +91,17 @@ export function LoginForm() {
           <Button type="submit" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
-        </div>
-      </form>
-    </div>
+          </div>
+        </form>
+      </div>
   );
+}
+
+export function LoginForm() {
+  return (
+    // You could have a loading skeleton as the `fallback` too
+    <Suspense fallback={<div>Loading...</div>}>
+      <Login />
+    </Suspense>
+  )
 }
