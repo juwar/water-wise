@@ -5,7 +5,7 @@ import { meterReadings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function PATCH(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -23,7 +23,7 @@ export async function PATCH(
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { meterNow } = body;
 
     if (typeof meterNow !== "number" || meterNow < 0) {
