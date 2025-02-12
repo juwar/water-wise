@@ -83,6 +83,7 @@ export default async function DashboardPage() {
         nik: users.nik,
         region: users.region,
         createdAt: users.createdAt,
+        address: users.address,
         readingId: meterReadings.id,
         meterNow: meterReadings.meterNow,
         meterBefore: meterReadings.meterBefore,
@@ -144,8 +145,8 @@ export default async function DashboardPage() {
           totalUsage,
           readingId: user.readingId,
           meterNow: user.meterNow,
-          meterBefore: user.meterBefore,
-          recordedAt: user.recordedAt
+          recordedAt: user.recordedAt,
+          address: user.address
         };
       })
     );
