@@ -48,7 +48,6 @@ function Login() {
 
       const from = searchParams.get("from") || "/dashboard";
       router.push(from);
-      router.refresh();
     } catch {
       setError("An error occurred. Please try again.");
     } finally {
