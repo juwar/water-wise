@@ -80,35 +80,42 @@ export function AdminDashboard({
             </div>
           </div>
 
-          {/* Monthly Usage */}
+          {/* Water Price */}
           <div className="rounded-lg border bg-card p-6">
             <div className="flex flex-col gap-2">
-              <h3 className="text-lg font-medium">Monthly Usage</h3>
+              <h3 className="text-lg font-medium">Water Price</h3>
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Total Usage</span>
-                  <span className="text-2xl font-bold">{monthlyUsage.toFixed(1)} m3</span>
+                  <span className="text-sm text-muted-foreground">Current Rate</span>
+                  <span className="text-2xl font-bold">Rp {waterPricePerM3.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Readings</span>
-                  <span className="text-sm font-medium">{monthlyReadings}</span>
+                  <span className="text-sm text-muted-foreground">Per Cubic Meter</span>
+                  <span className="text-sm font-medium">m³</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Average Usage */}
+          {/* Water Usage Statistics */}
           <div className="rounded-lg border bg-card p-6">
             <div className="flex flex-col gap-2">
-              <h3 className="text-lg font-medium">Average Usage</h3>
+              <div className="flex justify-between items-baseline">
+                <h3 className="text-lg font-medium">Water Usage</h3>
+                <span className="text-sm font-medium">({new Date().toLocaleString('default', { month: 'long' })})</span>
+              </div>
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Per User</span>
-                  <span className="text-2xl font-bold">{averageUsagePerUser.toFixed(1)} m3</span>
+                  <span className="text-sm text-muted-foreground">Total This Month</span>
+                  <span className="text-2xl font-bold">{monthlyUsage.toFixed(1)} m³</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">This Month</span>
-                  <span className="text-sm font-medium">{new Date().toLocaleString('default', { month: 'long' })}</span>
+                  <span className="text-sm text-muted-foreground">Average Per User</span>
+                  <span className="text-sm font-medium">{averageUsagePerUser.toFixed(1)} m³</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Total Readings</span>
+                  <span className="text-sm font-medium">{monthlyReadings}</span>
                 </div>
               </div>
             </div>
@@ -130,6 +137,7 @@ export function AdminDashboard({
               </div>
             </div>
           </div>
+
         </div>
 
         {/* Users List */}
