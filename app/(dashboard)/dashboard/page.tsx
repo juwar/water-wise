@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
 import { meterReadings, users } from "@/db/schema"
+import { getWaterPriceFromDb } from "@/lib/settings"
 import { desc, eq, and, sql } from "drizzle-orm"
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard"
 import { UserDashboard } from "@/components/dashboard/user-dashboard"
@@ -35,6 +36,9 @@ export default async function DashboardPage() {
   const isAdmin = user.role === "admin" || user.role === "officer";
 
   if (isAdmin) {
+    // Get water price from server-side function
+    const waterPricePerM3 = await getWaterPriceFromDb();
+
     // Get total users count
     const totalUsers = await db
       .select({ count: sql<number>`count(*)` })
@@ -161,6 +165,7 @@ export default async function DashboardPage() {
         averageUsagePerUser={averageUsagePerUser}
         recentReadings={recentReadings}
         lastWeek={lastWeek}
+        waterPricePerM3={waterPricePerM3}
         usersWithStats={usersWithStats}
       />
     );

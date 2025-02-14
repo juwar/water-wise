@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 dotenv.config({ path: '.env.local' });
 
 import { db } from "@/lib/db";
-import { users, credentials, meterReadings } from "./schema";
+import { users, credentials, meterReadings, websiteSettings } from "./schema";
 import bcrypt from "bcrypt";
 
 if (!process.env.DATABASE_URL) {
@@ -15,6 +15,7 @@ async function seed() {
     await db.delete(meterReadings);
     await db.delete(credentials);
     await db.delete(users);
+    await db.delete(websiteSettings);
     
     // Create admin user
     const adminUser = await db.insert(users).values({
@@ -44,6 +45,13 @@ async function seed() {
       userId: officerUser[0].id,
       nik: "2345678901234567",
       password: await bcrypt.hash("officer123", 10),
+    });
+
+    // Add website settings
+    await db.insert(websiteSettings).values({
+      key: "water_price_per_m3",
+      value: "5000",
+      desc: "Price of water discharge per cubic meter (m3) in IDR",
     });
 
     console.log("✅ Seed data inserted successfully");
