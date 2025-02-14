@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { getCurrentUser } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { db } from "@/lib/db"
-import { meterReadings, users } from "@/db/schema"
+import { meterReadings, users, websiteSettings } from "@/db/schema"
 import { desc, eq, and, sql } from "drizzle-orm"
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard"
 import { UserDashboard } from "@/components/dashboard/user-dashboard"
@@ -35,6 +35,16 @@ export default async function DashboardPage() {
   const isAdmin = user.role === "admin" || user.role === "officer";
 
   if (isAdmin) {
+    // Get water price setting
+    const waterPriceSetting = await db
+      .select()
+      .from(websiteSettings)
+      .where(eq(websiteSettings.key, "water_price_per_m3"))
+      .limit(1)
+      .then(rows => rows[0]);
+
+    const waterPricePerM3 = waterPriceSetting ? parseInt(waterPriceSetting.value) : 5000; // default to 5000 if not set
+
     // Get total users count
     const totalUsers = await db
       .select({ count: sql<number>`count(*)` })
@@ -161,6 +171,7 @@ export default async function DashboardPage() {
         averageUsagePerUser={averageUsagePerUser}
         recentReadings={recentReadings}
         lastWeek={lastWeek}
+        waterPricePerM3={waterPricePerM3}
         usersWithStats={usersWithStats}
       />
     );

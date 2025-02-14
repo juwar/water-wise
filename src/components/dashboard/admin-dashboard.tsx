@@ -7,6 +7,21 @@ import { EditableMeter } from "@/components/meter-readings/editable-meter"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+interface UserStats {
+  id: number
+  name: string | null
+  nik: string
+  region: string | null
+  address: string | null
+  createdAt: Date | null
+  monthlyUsage: number
+  totalUsage: number
+  readingId: number | null
+  meterNow: number | null
+  meterBefore: number | null
+  recordedAt: Date | null
+}
+
 interface AdminDashboardProps {
   userName: string
   role: string
@@ -16,20 +31,8 @@ interface AdminDashboardProps {
   averageUsagePerUser: number
   recentReadings: number
   lastWeek: Date
-  usersWithStats: Array<{
-    id: number
-    name: string | null
-    nik: string
-    region: string | null
-    address: string | null
-    createdAt: Date | null
-    monthlyUsage: number
-    totalUsage: number
-    readingId: number | null
-    meterNow: number | null
-    meterBefore: number | null
-    recordedAt: Date | null
-  }>
+  waterPricePerM3: number
+  usersWithStats: Array<UserStats>
 }
 
 export function AdminDashboard({
@@ -41,10 +44,14 @@ export function AdminDashboard({
   averageUsagePerUser,
   recentReadings,
   lastWeek,
+  waterPricePerM3,
   usersWithStats,
 }: AdminDashboardProps) {
   const router = useRouter()
   const [selectedUser, setSelectedUser] = useState<typeof usersWithStats[0] | null>(null)
+  const getUsage = (user: UserStats) => user.meterNow && user.meterBefore
+    ? user.meterNow - user.meterBefore
+    : user.meterNow || 0
 
   return (
     <div className="container py-8">
@@ -143,6 +150,7 @@ export function AdminDashboard({
                   <th className="p-4 font-medium">Previous Reading</th>
                   <th className="p-4 font-medium">Current Reading</th>
                   <th className="p-4 font-medium">Usage</th>
+                  <th className="p-4 font-medium">Bill</th>
                   <th className="p-4 font-medium">Recorded At</th>
                   <th className="p-4 font-medium">Actions</th>
                 </tr>
@@ -153,7 +161,7 @@ export function AdminDashboard({
                     <td className="p-4">{userStats.name}</td>
                     <td className="p-4">{userStats.nik}</td>
                     <td className="p-4">{userStats.region}</td>
-                    <td className="p-4">{userStats.meterBefore || "No reading"}</td>
+                    <td className="p-4">{`${userStats.meterBefore || userStats.meterNow} m³`}</td>
                     <td className="p-4">
                       <EditableMeter
                         readingId={userStats.readingId!}
@@ -164,9 +172,10 @@ export function AdminDashboard({
                       />
                     </td>
                     <td className="p-4">
-                      {userStats.meterNow && userStats.meterBefore
-                        ? `${userStats.meterNow - userStats.meterBefore} m3`
-                        : "N/A"}
+                      {`${getUsage(userStats)} m³`|| "N/A"}
+                    </td>
+                    <td className="p-4">
+                      {`Rp ${((getUsage(userStats)) * waterPricePerM3).toLocaleString()}` || "N/A"}
                     </td>
                     <td className="p-4">
                       {userStats.recordedAt
@@ -186,7 +195,7 @@ export function AdminDashboard({
                 ))}
                 {usersWithStats.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="p-4 text-center text-muted-foreground">
+                    <td colSpan={9} className="p-4 text-center text-muted-foreground">
                       No users found
                     </td>
                   </tr>

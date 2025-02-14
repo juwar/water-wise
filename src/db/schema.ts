@@ -31,6 +31,15 @@ export const meterReadings = pgTable("meter_readings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const websiteSettings = pgTable('website_settings', {
+  id: serial('id').primaryKey(),
+  key: varchar('key', { length: 100 }).unique().notNull(),
+  value: text('value', ).notNull(),
+  desc: varchar('desc', { length: 225 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   credentials: many(credentials),

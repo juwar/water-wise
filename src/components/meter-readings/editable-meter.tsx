@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Save } from "lucide-react";
+import { Pencil, Save, CircleX } from "lucide-react";
 
 interface EditableMeterProps {
   readingId: number;
@@ -55,7 +55,7 @@ export function EditableMeter({
   if (!isEditing) {
     return (
       <div className="flex items-center gap-2">
-        <span>{currentValue || "No reading"}</span>
+        <span>{`${currentValue} m³` || "No reading"}</span>
         <Button
           variant="ghost"
           size="icon"
@@ -73,14 +73,19 @@ export function EditableMeter({
 
   return (
     <div className="flex items-center gap-2">
-      <Input
-        type="number"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="w-24"
-        min={previousValue || 0}
-        disabled={isLoading}
-      />
+      <div className="relative">
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="w-24 pr-8"
+          min={previousValue || 0}
+          disabled={isLoading}
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+          m³
+        </span>
+      </div>
       <Button
         variant="ghost"
         size="icon"
@@ -89,6 +94,15 @@ export function EditableMeter({
         disabled={isLoading}
       >
         <Save className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="link"
+        size="icon"
+        className="h-8 w-8 ml-1"
+        onClick={() => setIsEditing(false)}
+        disabled={isLoading}
+      >
+        Cancel
       </Button>
     </div>
   );
