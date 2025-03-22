@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { QRScanner } from "./qr-scanner";
 import { useRouter } from "next/navigation";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 const searchSchema = z.object({
   search: z.string().min(1, "Please enter NIK or name"),
@@ -57,7 +58,9 @@ export function EnhancedRecordForm() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(data.search)}`);
+      const response = await fetch(
+        `/api/users/search?q=${encodeURIComponent(data.search)}`
+      );
       if (!response.ok) {
         throw new Error("Failed to search users");
       }
@@ -144,8 +147,14 @@ export function EnhancedRecordForm() {
               {searchResults.map((user) => (
                 <div
                   key={user.id}
-                  className={`p-4 ${user.hasReadingThisMonth ? 'bg-muted' : 'hover:bg-muted cursor-pointer'}`}
-                  onClick={() => !user.hasReadingThisMonth && handleUserSelect(user)}
+                  className={`p-4 ${
+                    user.hasReadingThisMonth
+                      ? "bg-muted"
+                      : "hover:bg-muted cursor-pointer"
+                  }`}
+                  onClick={() =>
+                    !user.hasReadingThisMonth && handleUserSelect(user)
+                  }
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -190,18 +199,23 @@ export function EnhancedRecordForm() {
             </Button>
           </div>
 
-          <form onSubmit={recordForm.handleSubmit(onSubmitRecord)} className="space-y-4">
+          <form
+            onSubmit={recordForm.handleSubmit(onSubmitRecord)}
+            className="space-y-4"
+          >
             <input type="hidden" {...recordForm.register("userId")} />
             <input type="hidden" {...recordForm.register("meterBefore")} />
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Previous Reading</span>
+                <span className="text-sm text-muted-foreground">
+                  Previous Reading
+                </span>
                 <span className="text-sm font-medium">
                   {selectedUser.lastReading || 0}
                 </span>
               </div>
-              
+
               <div>
                 <Input
                   {...recordForm.register("meterNow")}
@@ -228,8 +242,9 @@ export function EnhancedRecordForm() {
       )}
 
       {/* QR Scanner Dialog */}
-      <Dialog open={showQRScanner} onOpenChange={setShowQRScanner}>
+      <Dialog open={showQRScanner}>
         <DialogContent>
+          <DialogTitle>QR</DialogTitle>
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-4">Scan QR Code</h2>
             <QRScanner
@@ -241,10 +256,7 @@ export function EnhancedRecordForm() {
               onError={(error) => setError(error)}
             />
             <div className="mt-4 flex justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setShowQRScanner(false)}
-              >
+              <Button variant="outline" onClick={() => setShowQRScanner(false)}>
                 Cancel
               </Button>
             </div>
