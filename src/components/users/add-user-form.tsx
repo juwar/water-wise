@@ -61,7 +61,7 @@ export function AddUserForm() {
         throw new Error(error.message || "Failed to create user");
       }
 
-      router.push("/admin");
+      router.push("/users");
       router.refresh();
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to create user");

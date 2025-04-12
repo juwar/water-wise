@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { AddUserForm } from "@/components/users/add-user-form";
 
 export const metadata: Metadata = {
-  title: "Add User - Water Wise",
+  title: "Add User - Berair",
   description: "Add a new user to the system",
 };
 

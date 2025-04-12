@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { UsersList } from "@/components/users/users-list";
 
 export const metadata: Metadata = {
-  title: "Users - Water Wise",
+  title: "Users - Berair",
   description: "Manage system users",
 };
 

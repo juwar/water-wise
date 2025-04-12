@@ -9,7 +9,7 @@ import { AdminDashboard } from "@/components/dashboard/admin-dashboard"
 import { UserDashboard } from "@/components/dashboard/user-dashboard"
 
 export const metadata: Metadata = {
-  title: "Dashboard - Water Wise",
+  title: "Dashboard - Berair",
   description: "Manage your water meter readings",
 }
 

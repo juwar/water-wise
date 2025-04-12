@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import Link from "next/link";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import Image from "next/image";
+import IconApp from "../assets/icon2.png"
 
 export default async function DashboardLayout({
   children,
@@ -20,7 +22,8 @@ export default async function DashboardLayout({
         <div className="container flex h-14 items-center">
           <div className="mr-4 flex">
             <Link className="mr-6 flex items-center space-x-2" href={user ? '/dashboard' : '/'}>
-              <span className="font-bold">Water Wise</span>
+              {/* <span className="font-bold">Berair</span> */}
+              <Image src={IconApp} alt={""} className="h-10 w-auto"/>
             </Link>
           </div>
           <nav className="flex flex-1 items-center space-x-6 text-sm font-medium">

@@ -6,7 +6,7 @@ import { SessionProvider } from "@/components/providers/session-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Water Wise - Water Meter Management",
+  title: "Berair - Water Meter Management",
   description: "A water meter management system",
 };
 

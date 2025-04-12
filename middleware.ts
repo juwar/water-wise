@@ -46,9 +46,9 @@ export default withAuth(
 export const config = {
   matcher: [
     // Protect all routes that start with these prefixes
-    "/admin/:path*",
-    "/officer/:path*",
     "/dashboard/:path*",
+    "/record/:path*",
+    "/users/:path*",
     // Exclude public routes and root path
     "/((?!api|_next/static|_next/image|favicon.ico|login|register|$).*)",
   ],

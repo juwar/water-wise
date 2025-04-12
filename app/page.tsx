@@ -2,7 +2,7 @@ import { CheckRecordForm } from "@/components/meter-readings/check-record-form";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Check Meter Record - Water Wise",
+  title: "Check Meter Record - Berair",
   description: "Check your water meter readings",
 };
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { EnhancedRecordForm } from "@/components/meter-readings/enhanced-record-form";
 
 export const metadata: Metadata = {
-  title: "Record Meter Reading - Water Wise",
+  title: "Record Meter Reading - Berair",
   description: "Record new water meter reading with QR scanning",
 };
 
