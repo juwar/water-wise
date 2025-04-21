@@ -6,16 +6,17 @@ import { eq } from "drizzle-orm";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser();
+    const { id } = await params;
 
     if (!user || user.role !== "admin") {
       return new NextResponse("Unauthorized", { status: 403 });
     }
 
-    const readingId = parseInt(params.id);
+    const readingId = parseInt(id);
     if (isNaN(readingId)) {
       return NextResponse.json(
         { message: "Invalid reading ID" },
