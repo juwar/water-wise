@@ -54,13 +54,13 @@ export default async function DashboardPage() {
       meterNow: meterReadings.meterNow,
       meterBefore: meterReadings.meterBefore,
     })
-    .from(meterReadings)
-    .where(
-      and(
-        sql`${meterReadings.recordedAt} >= ${startOfMonth.toISOString()}`,
-        sql`${meterReadings.recordedAt} <= ${now.toISOString()}`
-      )
-    );
+    .from(meterReadings);
+    // .where(
+    //   and(
+    //     sql`${meterReadings.recordedAt} >= ${startOfMonth.toISOString()}`,
+    //     sql`${meterReadings.recordedAt} <= ${now.toISOString()}`
+    //   )
+    // );
 
   // Calculate monthly statistics with updated usage calculation
   const monthlyUsage = monthlyReadings.reduce((sum, reading) => {
