@@ -19,9 +19,11 @@ export default async function RecordPage() {
     <div className="container py-8">
       <div className="flex flex-col gap-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Record Meter Reading</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Catat Pembacaan Meter
+          </h1>
           <p className="text-muted-foreground">
-            Record new water meter reading using QR code or manual input
+            Catat pembacaan meter air baru menggunakan kode QR atau input manual
           </p>
         </div>
 

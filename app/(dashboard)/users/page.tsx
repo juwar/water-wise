@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { UsersList } from "@/components/users/users-list";
 
 export const metadata: Metadata = {
-  title: "Users - Berair",
-  description: "Manage system users",
+  title: "Pengguna - Berair",
+  description: "Kelola pengguna sistem",
 };
 
 export default async function UsersPage() {
@@ -22,19 +22,19 @@ export default async function UsersPage() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Users Management</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Manajemen Pengguna</h1>
             <p className="text-muted-foreground">
-              Manage system users
+              Kelola pengguna sistem
             </p>
           </div>
           <Link href="/users/add">
-            <Button>Add New User</Button>
+            <Button>Tambah Pengguna Baru</Button>
           </Link>
         </div>
 
         <div className="rounded-lg border">
           <div className="p-4 border-b">
-            <h2 className="text-xl font-semibold">Users</h2>
+            <h2 className="text-xl font-semibold">Daftar Pengguna</h2>
           </div>
           <UsersList />
         </div>

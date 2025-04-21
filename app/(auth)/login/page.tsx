@@ -15,10 +15,10 @@ export default function LoginPage() {
         <div className="flex flex-col space-y-2 text-center items-center">
           <Image src={IconApp} alt={""} className="h-auto w-40 p-8" />
           <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back
+            Selamat datang kembali
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email and password to sign in to your account
+            Masuukan email dan password untuk masuk ke dalam akunmu
           </p>
         </div>
         <LoginForm />

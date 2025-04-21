@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const userSchema = z.object({
-  nik: z.string().length(16, "NIK must be 16 characters"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  region: z.string().min(2, "Region must be at least 2 characters"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
+  nik: z.string().length(16, "NIK harus terdiri dari 16 karakter"),
+  name: z.string().min(2, "Nama harus memiliki minimal 2 karakter"),
+  region: z.string().min(2, "Wilayah harus memiliki minimal 2 karakter"),
+  address: z.string().min(5, "Alamat harus memiliki minimal 5 karakter"),
   role: z.enum(["admin", "officer", "user"]),
-  password: z.string().min(6, "Password must be at least 6 characters").optional(),
+  password: z.string().min(6, "Kata sandi minimal 6 karakter").optional(),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -58,13 +58,13 @@ export function AddUserForm() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to create user");
+        throw new Error(error.message || "Gagal membuat pengguna");
       }
 
       router.push("/users");
       router.refresh();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to create user");
+      setError(error instanceof Error ? error.message : "Gagal membuat pengguna");
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +95,7 @@ export function AddUserForm() {
           <Input
             id="nik"
             {...register("nik")}
-            placeholder="Enter NIK"
+            placeholder="Masukkan NIK"
             maxLength={16}
             disabled={isLoading}
           />
@@ -105,11 +105,11 @@ export function AddUserForm() {
         </div>
 
         <div className="grid gap-2">
-          <label htmlFor="name">Name</label>
+          <label htmlFor="name">Nama</label>
           <Input
             id="name"
             {...register("name")}
-            placeholder="Enter name"
+            placeholder="Masukkan nama"
             disabled={isLoading}
           />
           {errors.name && (
@@ -118,11 +118,11 @@ export function AddUserForm() {
         </div>
 
         <div className="grid gap-2">
-          <label htmlFor="region">Region</label>
+          <label htmlFor="region">Wilayah</label>
           <Input
             id="region"
             {...register("region")}
-            placeholder="Enter region"
+            placeholder="Masukkan wilayah"
             disabled={isLoading}
           />
           {errors.region && (
@@ -131,11 +131,11 @@ export function AddUserForm() {
         </div>
 
         <div className="grid gap-2">
-          <label htmlFor="address">Address</label>
+          <label htmlFor="address">Alamat</label>
           <Input
             id="address"
             {...register("address")}
-            placeholder="Enter address"
+            placeholder="Masukkan alamat"
             disabled={isLoading}
           />
           {errors.address && (
@@ -145,12 +145,12 @@ export function AddUserForm() {
 
         {selectedRole !== "user" && (
           <div className="grid gap-2">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Kata Sandi</label>
             <Input
               id="password"
               type="password"
               {...register("password")}
-              placeholder="Enter password"
+              placeholder="Masukkan kata sandi"
               disabled={isLoading}
             />
             {errors.password && (
@@ -163,7 +163,7 @@ export function AddUserForm() {
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? "Creating..." : "Create User"}
+        {isLoading ? "Membuat..." : "Buat Pengguna"}
       </Button>
     </form>
   );

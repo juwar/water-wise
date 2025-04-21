@@ -13,7 +13,7 @@ export function SignOutButton() {
         })
       }
     >
-      Sign Out
+      Keluar
     </Button>
   );
 }

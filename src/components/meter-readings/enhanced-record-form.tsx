@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { DialogTitle } from "@radix-ui/react-dialog";
 
 const searchSchema = z.object({
-  search: z.string().min(1, "Please enter NIK or name"),
+  search: z.string().min(1, "Mohon masukkan NIK atau nama"),
 });
 
 const recordSchema = z.object({
@@ -62,13 +62,13 @@ export function EnhancedRecordForm() {
         `/api/users/search?q=${encodeURIComponent(data.search)}`
       );
       if (!response.ok) {
-        throw new Error("Failed to search users");
+        throw new Error("Gagal mencari pengguna");
       }
 
       const users = await response.json();
       setSearchResults(users);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }
@@ -89,17 +89,16 @@ export function EnhancedRecordForm() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to record reading");
+        throw new Error(error.message || "Gagal mencatat pembacaan");
       }
 
-      // Reset forms and state
       searchForm.reset();
       recordForm.reset();
       setSelectedUser(null);
       setSearchResults([]);
       router.refresh();
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : "Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +114,6 @@ export function EnhancedRecordForm() {
 
   return (
     <div className="space-y-8">
-      {/* Search Section */}
       {!selectedUser && (
         <div className="space-y-4">
           <div className="flex gap-4">
@@ -124,7 +122,7 @@ export function EnhancedRecordForm() {
               variant="outline"
               onClick={() => setShowQRScanner(true)}
             >
-              Scan QR Code
+              Pindai Kode QR
             </Button>
             <form
               onSubmit={searchForm.handleSubmit(onSearch)}
@@ -132,16 +130,15 @@ export function EnhancedRecordForm() {
             >
               <Input
                 {...searchForm.register("search")}
-                placeholder="Search by NIK or name"
+                placeholder="Cari berdasarkan NIK atau nama"
                 className="flex-1"
               />
               <Button type="submit" disabled={isLoading}>
-                Search
+                Cari
               </Button>
             </form>
           </div>
 
-          {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="rounded-lg border divide-y">
               {searchResults.map((user) => (
@@ -160,7 +157,7 @@ export function EnhancedRecordForm() {
                     <div>
                       <div className="font-medium">{user.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        NIK: {user.nik} • Region: {user.region}
+                        NIK: {user.nik} • Wilayah: {user.region}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {user.address}
@@ -168,7 +165,7 @@ export function EnhancedRecordForm() {
                     </div>
                     {user.hasReadingThisMonth && (
                       <span className="text-sm text-muted-foreground bg-secondary px-2 py-1 rounded">
-                        Already recorded this month
+                        Sudah dicatat bulan ini
                       </span>
                     )}
                   </div>
@@ -179,13 +176,12 @@ export function EnhancedRecordForm() {
         </div>
       )}
 
-      {/* Record Form */}
       {selectedUser && (
         <div className="space-y-6">
           <div className="rounded-lg border p-4 space-y-2">
             <div className="font-medium">{selectedUser.name}</div>
             <div className="text-sm text-muted-foreground">
-              NIK: {selectedUser.nik} • Region: {selectedUser.region}
+              NIK: {selectedUser.nik} • Wilayah: {selectedUser.region}
             </div>
             <div className="text-sm text-muted-foreground">
               {selectedUser.address}
@@ -195,7 +191,7 @@ export function EnhancedRecordForm() {
               className="text-sm"
               onClick={() => setSelectedUser(null)}
             >
-              Change User
+              Ganti Pengguna
             </Button>
           </div>
 
@@ -209,7 +205,7 @@ export function EnhancedRecordForm() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Previous Reading
+                  Pembacaan Sebelumnya
                 </span>
                 <span className="text-sm font-medium">
                   {selectedUser.lastReading || 0}
@@ -220,7 +216,7 @@ export function EnhancedRecordForm() {
                 <Input
                   {...recordForm.register("meterNow")}
                   type="number"
-                  placeholder="Current meter reading"
+                  placeholder="Pembacaan meter saat ini"
                   min={selectedUser.lastReading || 0}
                   disabled={isLoading}
                 />
@@ -235,18 +231,17 @@ export function EnhancedRecordForm() {
             {error && <p className="text-sm text-red-500">{error}</p>}
 
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Recording..." : "Record Reading"}
+              {isLoading ? "Mencatat..." : "Catat Pembacaan"}
             </Button>
           </form>
         </div>
       )}
 
-      {/* QR Scanner Dialog */}
       <Dialog open={showQRScanner}>
         <DialogContent>
-          <DialogTitle>QR</DialogTitle>
+          <DialogTitle>Kode QR</DialogTitle>
           <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Scan QR Code</h2>
+            <h2 className="text-lg font-semibold mb-4">Pindai Kode QR</h2>
             <QRScanner
               onResult={(result) => {
                 setShowQRScanner(false);
@@ -257,7 +252,7 @@ export function EnhancedRecordForm() {
             />
             <div className="mt-4 flex justify-end">
               <Button variant="outline" onClick={() => setShowQRScanner(false)}>
-                Cancel
+                Batal
               </Button>
             </div>
           </div>

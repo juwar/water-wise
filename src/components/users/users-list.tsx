@@ -53,10 +53,9 @@ export function UsersList() {
           },
         });
         if (!response.ok) {
-          throw new Error("Failed to fetch users");
+          throw new Error("Gagal mengambil data pengguna");
         }
         const data = await response.json() as RawUser[];
-        // Convert string dates to Date objects and ensure nullable fields
         const processedData = data.map((user: RawUser) => ({
           ...user,
           name: user.name || null,
@@ -67,8 +66,8 @@ export function UsersList() {
         setUsers(processedData);
         setFilteredUsers(processedData.filter(user => selectedRoles.includes(user.role)));
       } catch (error: Error | unknown) {
-        setError("Failed to load users");
-        console.error("Error fetching users:", error);
+        setError("Gagal memuat data pengguna");
+        console.error("Terjadi kesalahan saat mengambil data pengguna:", error);
       } finally {
         setIsLoading(false);
       }
@@ -78,7 +77,7 @@ export function UsersList() {
   }, []);
 
   if (isLoading) {
-    return <div>Loading users...</div>;
+    return <div>Memuat data pengguna...</div>;
   }
 
   if (error) {
@@ -95,19 +94,19 @@ export function UsersList() {
           <thead className="bg-muted/50">
             <tr>
               <th className="py-3 px-4 text-left font-medium">NIK</th>
-              <th className="py-3 px-4 text-left font-medium">Name</th>
-              <th className="py-3 px-4 text-left font-medium">Region</th>
-              <th className="py-3 px-4 text-left font-medium">Role</th>
-              <th className="py-3 px-4 text-left font-medium">Created At</th>
-              <th className="py-3 px-4 text-left font-medium">Actions</th>
+              <th className="py-3 px-4 text-left font-medium">Nama</th>
+              <th className="py-3 px-4 text-left font-medium">Wilayah</th>
+              <th className="py-3 px-4 text-left font-medium">Peran</th>
+              <th className="py-3 px-4 text-left font-medium">Dibuat Pada</th>
+              <th className="py-3 px-4 text-left font-medium">Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user) => (
               <tr key={user.id} className="border-t">
                 <td className="py-3 px-4">{user.nik}</td>
-                <td className="py-3 px-4">{user.name || 'N/A'}</td>
-                <td className="py-3 px-4">{user.region || 'N/A'}</td>
+                <td className="py-3 px-4">{user.name || 'Tidak tersedia'}</td>
+                <td className="py-3 px-4">{user.region || 'Tidak tersedia'}</td>
                 <td className="py-3 px-4">
                   <span className={`capitalize ${
                     user.role === "admin" 
@@ -120,7 +119,7 @@ export function UsersList() {
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  {user.createdAt ? user.createdAt.toLocaleDateString() : 'N/A'}
+                  {user.createdAt ? user.createdAt.toLocaleDateString() : 'Tidak tersedia'}
                 </td>
                 <td className="py-3 px-4">
                   <Button
@@ -128,7 +127,7 @@ export function UsersList() {
                     size="sm"
                     onClick={() => setSelectedUser(user)}
                   >
-                    View Details
+                    Lihat Detail
                   </Button>
                 </td>
               </tr>
@@ -136,7 +135,7 @@ export function UsersList() {
             {filteredUsers.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-4 px-4 text-center text-muted-foreground">
-                  No users found
+                  Tidak ada pengguna ditemukan
                 </td>
               </tr>
             )}
@@ -144,7 +143,6 @@ export function UsersList() {
         </table>
       </div>
 
-      {/* User Details Dialog */}
       {selectedUser && (
         <UserDetailsDialog
           user={selectedUser}
