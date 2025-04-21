@@ -35,6 +35,11 @@ export default async function DashboardLayout({
                 Users
               </Link>
             )}
+            {user.role === "admin" && (
+              <Link href="/reports" className="transition-colors hover:text-foreground/80">
+                Laporan
+              </Link>
+            )}
           </nav>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-muted-foreground">
