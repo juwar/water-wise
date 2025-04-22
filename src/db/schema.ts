@@ -1,5 +1,5 @@
 import { pgTable, serial, varchar, timestamp, text, integer } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { InferSelectModel, relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -59,3 +59,6 @@ export const meterReadingsRelations = relations(meterReadings, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export type MeterReadings = InferSelectModel<typeof meterReadings>;
+export type Users = InferSelectModel<typeof users>;

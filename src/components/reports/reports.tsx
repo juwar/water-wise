@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 // import { useRouter } from "next/navigation";
+import { MeterReadings, Users } from "@/db/schema";
 import {
   Calendar,
   FileText,
@@ -10,58 +11,51 @@ import {
   ChevronDown,
   Search,
 } from "lucide-react";
-
-interface UserStats {
-  id: number;
-  name: string | null;
-  nik: string;
-  region: string | null;
-  address: string | null;
-  createdAt: Date | null;
-  monthlyUsage: number;
-  totalUsage: number;
-  readingId: number | null;
-  meterNow: number | null;
-  meterBefore: number | null;
-  recordedAt: Date | null;
-}
-
+import useSWR from "swr";
 interface AdminDashboardProps {
-  userName: string;
-  role: string;
-  totalUsers: number;
-  monthlyUsage: number;
-  monthlyReadings: number;
-  averageUsagePerUser: number;
-  recentReadings: number;
-  lastWeek: Date;
   waterPricePerM3: number;
-  usersWithStats: Array<UserStats>;
 }
+
+type ReportType = MeterReadings & Users
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function Reports({
   // role,
   // totalUsers,
-  monthlyUsage,
+  // monthlyUsage,
   // monthlyReadings,
   // averageUsagePerUser,
   // recentReadings,
   // lastWeek,
   waterPricePerM3,
-  usersWithStats,
+  // usersWithStats,
 }: AdminDashboardProps) {
   // const router = useRouter();
   // const [selectedUser, setSelectedUser] = useState<
   //   (typeof usersWithStats)[0] | null
   // >(null);
-  const getUsage = (user: UserStats) =>
-    user.meterNow && user.meterBefore
-      ? user.meterNow - user.meterBefore
-      : user.meterNow || 0;
+  const getUsage = (meter: ReportType) =>
+    meter.meterNow && meter.meterBefore
+      ? meter.meterNow - meter.meterBefore
+      : meter.meterNow || 0;
   const [activeTab, setActiveTab] = useState("meter");
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+  const {
+    data: reports,
+    // error,
+    // isLoading,
+    // mutate,
+  } = useSWR<{ data: ReportType[]; totalUsage: number }>(
+    `/api/reports`,
+    fetcher
+  );
+
+  console.log("🚀 ~ report:", reports)
+
+  
 
   const years = [2025, 2024, 2023];
   const months = [
@@ -273,24 +267,24 @@ export function Reports({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {usersWithStats.map((userStats) => (
-                            <tr key={userStats.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4">{userStats.name}</td>
-                              <td className="px-6 py-4">{userStats.nik}</td>
-                              <td className="px-6 py-4">{userStats.region}</td>
+                          {reports?.data?.map((report) => (
+                            <tr key={report.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4">{report.name}</td>
+                              <td className="px-6 py-4">{report.nik}</td>
+                              <td className="px-6 py-4">{report.region}</td>
                               <td className="px-6 py-4">{`${
-                                userStats.meterBefore || userStats.meterNow
+                                report.meterBefore || report.meterNow
                               } m³`}</td>
                               <td className="px-6 py-4">
-                                {userStats.meterNow} m³
+                                {report.meterNow} m³
                               </td>
                               <td className="px-6 py-4">
-                                {`${getUsage(userStats)} m³` || "N/A"}
+                                {`${getUsage(report)} m³` || "N/A"}
                               </td>
                               <td className="px-6 py-4">
-                                {userStats.recordedAt
+                                {report.recordedAt
                                   ? new Date(
-                                      userStats.recordedAt
+                                      report.recordedAt
                                     ).toLocaleDateString()
                                   : "N/A"}
                               </td>
@@ -306,7 +300,7 @@ export function Reports({
                               Total Penggunaan:
                             </td>
                             <td className="px-6 py-3 font-bold">
-                              {monthlyUsage.toFixed(1)} m³
+                              {reports?.totalUsage.toFixed(1)} m³
                             </td>
                             <td></td>
                           </tr>
@@ -353,13 +347,13 @@ export function Reports({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {usersWithStats.map((userStats) => (
-                            <tr key={userStats.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4">{userStats.name}</td>
-                              <td className="px-6 py-4">{userStats.nik}</td>
-                              <td className="px-6 py-4">{userStats.region}</td>
+                          {reports?.data?.map((report) => (
+                            <tr key={report.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4">{report.name}</td>
+                              <td className="px-6 py-4">{report.nik}</td>
+                              <td className="px-6 py-4">{report.region}</td>
                               <td className="px-6 py-4">
-                                {`${getUsage(userStats)} m³` || "N/A"}
+                                {`${getUsage(report)} m³` || "N/A"}
                               </td>
                               <td className="px-6 py-4">
                                 Rp {waterPricePerM3.toLocaleString()}
@@ -367,7 +361,7 @@ export function Reports({
                               <td className="px-6 py-4 font-medium">
                                 Rp{" "}
                                 {(
-                                  getUsage(userStats) * waterPricePerM3 || 0
+                                  getUsage(report) * waterPricePerM3 || 0
                                 ).toLocaleString()}
                               </td>
                               <td className="px-6 py-4">
@@ -403,7 +397,7 @@ export function Reports({
                             <td className="px-6 py-3 font-bold">
                               Rp{" "}
                               {(
-                                monthlyUsage * waterPricePerM3 || 0
+                                (reports?.totalUsage || 0) * waterPricePerM3 || 0
                               ).toLocaleString()}
                             </td>
                             <td colSpan={2}></td>
