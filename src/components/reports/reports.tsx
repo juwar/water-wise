@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 // import { useRouter } from "next/navigation";
 import { MeterReadings, Users } from "@/db/schema";
 import {
@@ -16,21 +17,11 @@ interface AdminDashboardProps {
   waterPricePerM3: number;
 }
 
-type ReportType = MeterReadings & Users
+type ReportType = MeterReadings & Users;
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function Reports({
-  // role,
-  // totalUsers,
-  // monthlyUsage,
-  // monthlyReadings,
-  // averageUsagePerUser,
-  // recentReadings,
-  // lastWeek,
-  waterPricePerM3,
-  // usersWithStats,
-}: AdminDashboardProps) {
+export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   // const router = useRouter();
   // const [selectedUser, setSelectedUser] = useState<
   //   (typeof usersWithStats)[0] | null
@@ -53,9 +44,8 @@ export function Reports({
     fetcher
   );
 
-  console.log("🚀 ~ report:", reports)
-
-  
+  const contentRef = useRef<HTMLDivElement>(null);
+  const reactToPrintFn = useReactToPrint({ contentRef });
 
   const years = [2025, 2024, 2023];
   const months = [
@@ -79,7 +69,7 @@ export function Reports({
   const [selectedRegion, setSelectedRegion] = useState("Semua Wilayah");
 
   return (
-    <div className="container py-8">
+    <div className="container py-8" ref={contentRef}>
       <div className="flex flex-col gap-8">
         {/* Main Content */}
         <main className="flex-1">
@@ -225,7 +215,7 @@ export function Reports({
                   </div>
 
                   {/* Export Button */}
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center space-x-2 text-sm hover:bg-green-700">
+                  <button className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center space-x-2 text-sm hover:bg-green-700" onClick={() => reactToPrintFn()}>
                     <Download size={16} />
                     <span>Export</span>
                   </button>
@@ -307,9 +297,9 @@ export function Reports({
                         </tfoot>
                       </table>
                     </div>
-                    <div className="mt-4 text-sm text-gray-500">
+                    {/* <div className="mt-4 text-sm text-gray-500">
                       Menampilkan 3 dari 3 data
-                    </div>
+                    </div> */}
                   </>
                 ) : (
                   <>
@@ -397,7 +387,8 @@ export function Reports({
                             <td className="px-6 py-3 font-bold">
                               Rp{" "}
                               {(
-                                (reports?.totalUsage || 0) * waterPricePerM3 || 0
+                                (reports?.totalUsage || 0) * waterPricePerM3 ||
+                                0
                               ).toLocaleString()}
                             </td>
                             <td colSpan={2}></td>
@@ -405,9 +396,9 @@ export function Reports({
                         </tfoot>
                       </table>
                     </div>
-                    <div className="mt-4 text-sm text-gray-500">
+                    {/* <div className="mt-4 text-sm text-gray-500">
                       Menampilkan 3 dari 3 data
-                    </div>
+                    </div> */}
                   </>
                 )}
               </div>
