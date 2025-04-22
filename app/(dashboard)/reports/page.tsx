@@ -14,6 +14,9 @@ export const metadata: Metadata = {
 
 // Helper function to calculate usage
 const calculateUsage = (meterNow: number, meterBefore: number | null) => {
+  if (meterNow === null || meterNow === 0) {
+    return 0;
+  }
   if (meterBefore === null || meterBefore === 0) {
     return meterNow;
   }
