@@ -1,5 +1,5 @@
 {
-  "id": "7a665513-25f0-4b52-aee6-2e2d00f75079",
+  "id": "6c94841f-6821-4518-90b9-3cac6ad3a43e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -20,9 +20,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "email": {
-          "name": "email",
-          "type": "varchar(255)",
+        "nik": {
+          "name": "nik",
+          "type": "varchar(16)",
           "primaryKey": false,
           "notNull": true
         },
@@ -65,11 +65,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "credentials_email_unique": {
-          "name": "credentials_email_unique",
+        "credentials_nik_unique": {
+          "name": "credentials_nik_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "email"
+            "nik"
           ]
         }
       },
@@ -104,6 +104,19 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "meter_paid": {
+          "name": "meter_paid",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_payment": {
+          "name": "last_payment",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         },
         "recorded_at": {
           "name": "recorded_at",
@@ -214,6 +227,65 @@
           "nullsNotDistinct": false,
           "columns": [
             "nik"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.website_settings": {
+      "name": "website_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "desc": {
+          "name": "desc",
+          "type": "varchar(225)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "website_settings_key_unique": {
+          "name": "website_settings_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
           ]
         }
       },

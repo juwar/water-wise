@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
-// import { useRouter } from "next/navigation";
 import { MeterReadings, Users } from "@/db/schema";
 import {
   Calendar,
@@ -11,21 +10,32 @@ import {
   Download,
   ChevronDown,
   Search,
+  CreditCard,
+  Loader,
 } from "lucide-react";
 import useSWR from "swr";
+import useSWRMutation from "swr/mutation";
 interface AdminDashboardProps {
   waterPricePerM3: number;
 }
 
-type ReportType = MeterReadings & Users;
+type ReportType = MeterReadings &
+  Users & {
+    readingId: number;
+  };
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const mutator = (url: string, { arg }: { arg: unknown }) =>
+  fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(arg),
+  }).then((res) => {
+    if (!res.ok) throw new Error("Failed to mutate");
+    return res.json();
+  });
 
 export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
-  // const router = useRouter();
-  // const [selectedUser, setSelectedUser] = useState<
-  //   (typeof usersWithStats)[0] | null
-  // >(null);
   const getUsage = (meter: ReportType) =>
     meter.meterNow && meter.meterBefore
       ? meter.meterNow - meter.meterBefore
@@ -37,12 +47,29 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   const {
     data: reports,
     // error,
-    // isLoading,
-    // mutate,
-  } = useSWR<{ data: ReportType[]; totalUsage: number }>(
+    isLoading,
+    mutate,
+  } = useSWR<{ data: ReportType[]; totalUsage: number, totalUsagePaid: number }>(
     `/api/reports`,
     fetcher
   );
+  const { trigger, data } = useSWRMutation("/api/reports/payment", mutator);
+
+  const handlePayment = async (id: number) => {
+    try {
+      await trigger({
+        id,
+      });
+    } catch (err: unknown) {
+      const error = err as Error;
+      alert(error.message);
+    }
+  };
+
+  useEffect(() => {
+    mutate()
+  }, [data?.success])
+  
 
   const contentRef = useRef<HTMLDivElement>(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
@@ -215,7 +242,10 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                   </div>
 
                   {/* Export Button */}
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center space-x-2 text-sm hover:bg-green-700" onClick={() => reactToPrintFn()}>
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center space-x-2 text-sm hover:bg-green-700"
+                    onClick={() => reactToPrintFn()}
+                  >
                     <Download size={16} />
                     <span>Export</span>
                   </button>
@@ -257,29 +287,51 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {reports?.data?.map((report) => (
-                            <tr key={report.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4">{report.name}</td>
-                              <td className="px-6 py-4">{report.nik}</td>
-                              <td className="px-6 py-4">{report.region}</td>
-                              <td className="px-6 py-4">{`${
-                                report.meterBefore || report.meterNow
-                              } m³`}</td>
-                              <td className="px-6 py-4">
-                                {report.meterNow} m³
-                              </td>
-                              <td className="px-6 py-4">
-                                {`${getUsage(report)} m³` || "N/A"}
-                              </td>
-                              <td className="px-6 py-4">
-                                {report.recordedAt
-                                  ? new Date(
-                                      report.recordedAt
-                                    ).toLocaleDateString()
-                                  : "N/A"}
+                          {isLoading ? (
+                            <tr>
+                              <td colSpan={7} className="px-6 py-10">
+                                <div className="flex flex-col items-center justify-center">
+                                  <Loader className="h-8 w-8 text-blue-500 animate-spin" />
+                                  <p className="mt-2 text-gray-500">
+                                    Memuat data...
+                                  </p>
+                                </div>
                               </td>
                             </tr>
-                          ))}
+                          ) : reports?.data?.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={7}
+                                className="px-6 py-10 text-center text-gray-500"
+                              >
+                                Tidak ada data untuk ditampilkan
+                              </td>
+                            </tr>
+                          ) : (
+                            reports?.data?.map((report) => (
+                              <tr key={report.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4">{report.name}</td>
+                                <td className="px-6 py-4">{report.nik}</td>
+                                <td className="px-6 py-4">{report.region}</td>
+                                <td className="px-6 py-4">{`${
+                                  report.meterBefore || report.meterNow
+                                } m³`}</td>
+                                <td className="px-6 py-4">
+                                  {report.meterNow} m³
+                                </td>
+                                <td className="px-6 py-4">
+                                  {`${getUsage(report)} m³` || "N/A"}
+                                </td>
+                                <td className="px-6 py-4">
+                                  {report.recordedAt
+                                    ? new Date(
+                                        report.recordedAt
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                         <tfoot>
                           <tr className="bg-blue-50">
@@ -334,52 +386,101 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             <th className="px-6 py-3 text-left font-medium">
                               Tanggal Bayar
                             </th>
+                            <th className="px-6 py-3 text-left font-medium">
+                              Aksi
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {reports?.data?.map((report) => (
-                            <tr key={report.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4">{report.name}</td>
-                              <td className="px-6 py-4">{report.nik}</td>
-                              <td className="px-6 py-4">{report.region}</td>
-                              <td className="px-6 py-4">
-                                {`${getUsage(report)} m³` || "N/A"}
+                          {isLoading ? (
+                            <tr>
+                              <td colSpan={7} className="px-6 py-10">
+                                <div className="flex flex-col items-center justify-center">
+                                  <Loader className="h-8 w-8 text-blue-500 animate-spin" />
+                                  <p className="mt-2 text-gray-500">
+                                    Memuat data...
+                                  </p>
+                                </div>
                               </td>
-                              <td className="px-6 py-4">
-                                Rp {waterPricePerM3.toLocaleString()}
-                              </td>
-                              <td className="px-6 py-4 font-medium">
-                                Rp{" "}
-                                {(
-                                  getUsage(report) * waterPricePerM3 || 0
-                                ).toLocaleString()}
-                              </td>
-                              <td className="px-6 py-4">
-                                {/* <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                                Lunas
-                              </span> */}
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                                  Tertunda
-                                </span>
-                              </td>
-                              <td className="px-6 py-4">- </td>
                             </tr>
-                          ))}
+                          ) : reports?.data?.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={7}
+                                className="px-6 py-10 text-center text-gray-500"
+                              >
+                                Tidak ada data untuk ditampilkan
+                              </td>
+                            </tr>
+                          ) : (
+                            reports?.data?.map((report) => (
+                              <tr key={report.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4">{report.name}</td>
+                                <td className="px-6 py-4">{report.nik}</td>
+                                <td className="px-6 py-4">{report.region}</td>
+                                <td className="px-6 py-4">
+                                  {`${getUsage(report)} m³` || "N/A"}
+                                </td>
+                                <td className="px-6 py-4">
+                                  Rp {waterPricePerM3.toLocaleString()}
+                                </td>
+                                <td className="px-6 py-4 font-medium">
+                                  Rp{" "}
+                                  {(
+                                    getUsage(report) * waterPricePerM3 || 0
+                                  ).toLocaleString()}
+                                </td>
+                                <td className="px-6 py-4">
+                                  {report.meterNow > report.meterPaid ? (
+                                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                                      Tertunda
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                      Lunas
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4">
+                                  {report.meterPaid >= report.meterNow && report?.lastPayment
+                                    ? new Date(
+                                        report.lastPayment as Date
+                                      ).toLocaleDateString()
+                                    : "- "}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <button
+                                    onClick={() =>
+                                      handlePayment(report?.readingId)
+                                    }
+                                    className="px-3 py-1 bg-blue-600 text-white rounded flex items-center space-x-1 text-xs hover:bg-blue-700"
+                                  >
+                                    <CreditCard size={12} />
+                                    <span>Bayar</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                         <tfoot>
                           <tr className="bg-blue-50">
                             <td
-                              colSpan={5}
+                              colSpan={6}
                               className="px-6 py-3 text-right font-medium"
                             >
                               Total Pendapatan:
                             </td>
-                            <td className="px-6 py-3 font-bold">Rp 0</td>
+                            <td className="px-6 py-3 font-bold">Rp{" "}
+                              {(
+                                (reports?.totalUsagePaid || 0) * waterPricePerM3 ||
+                                0
+                              ).toLocaleString()}</td>
                             <td colSpan={2}></td>
                           </tr>
                           <tr className="bg-yellow-50">
                             <td
-                              colSpan={5}
+                              colSpan={6}
                               className="px-6 py-3 text-right font-medium"
                             >
                               Total Tertunda:
@@ -387,7 +488,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             <td className="px-6 py-3 font-bold">
                               Rp{" "}
                               {(
-                                (reports?.totalUsage || 0) * waterPricePerM3 ||
+                                ((reports?.totalUsage || 0) - (reports?.totalUsagePaid || 0) || 0) * waterPricePerM3 ||
                                 0
                               ).toLocaleString()}
                             </td>
@@ -396,9 +497,6 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                         </tfoot>
                       </table>
                     </div>
-                    {/* <div className="mt-4 text-sm text-gray-500">
-                      Menampilkan 3 dari 3 data
-                    </div> */}
                   </>
                 )}
               </div>

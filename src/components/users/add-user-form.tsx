@@ -47,6 +47,7 @@ export function AddUserForm() {
         ...data,
         password: data.role === "user" ? data.nik : data.password,
       };
+      console.log("🚀 ~ onSubmit ~ submissionData:", submissionData)
 
       const response = await fetch("/api/users", {
         method: "POST",

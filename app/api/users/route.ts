@@ -53,11 +53,12 @@ export async function POST(req: NextRequest) {
       .returning();
 
     // Hash password and create credentials
-    const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+    
+    console.log("🚀 ~ awaitdb.insert ~ validatedData.password:", validatedData.password)
     await db.insert(credentials).values({
       userId: newUser.id,
       nik: validatedData.nik,
-      password: hashedPassword,
+      password: await bcrypt.hash(validatedData.password, 10)
     });
 
     return NextResponse.json(

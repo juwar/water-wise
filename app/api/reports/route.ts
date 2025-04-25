@@ -40,6 +40,8 @@ export async function GET() {
         meterNow: meterReadings.meterNow,
         meterBefore: meterReadings.meterBefore,
         recordedAt: meterReadings.recordedAt,
+        meterPaid: meterReadings.meterPaid,
+        lastPayment: meterReadings.lastPayment
       })
       .from(users)
       .leftJoin(
@@ -62,8 +64,14 @@ export async function GET() {
         calculateUsage(ensureNumber(reading.meterNow), reading.meterBefore)
       );
     }, 0);
+    const totalUsagePaid = allUsers.reduce((sum, reading) => {
+      return (
+        sum + (ensureNumber(reading.meterPaid) >= ensureNumber(reading?.meterNow) && reading.lastPayment !== null ?
+        calculateUsage(ensureNumber(reading.meterNow), reading.meterBefore) : 0)
+      );
+    }, 0);
 
-    return NextResponse.json({ data: allUsers, totalUsage });
+    return NextResponse.json({ data: allUsers, totalUsage, totalUsagePaid });
   } catch (error) {
     console.error("[USERS_GET]", error);
     return NextResponse.json(

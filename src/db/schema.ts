@@ -26,6 +26,8 @@ export const meterReadings = pgTable("meter_readings", {
   userId: integer("user_id").references(() => users.id).notNull(),
   meterNow: integer("meter_now").notNull(),
   meterBefore: integer("meter_before").notNull(),
+  meterPaid: integer("meter_paid").default(0).notNull(),
+  lastPayment: timestamp("last_payment"),
   recordedAt: timestamp("recorded_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

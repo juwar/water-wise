@@ -50,25 +50,25 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const userCred = await db
-            .select({
-              id: usersTable.id,
-              name: usersTable.name,
-              role: usersTable.role,
-              nik: usersTable.nik,
-              password: credentialsTable.password,
-            })
-            .from(credentialsTable)
-            .innerJoin(
-              usersTable,
-              eq(credentialsTable.userId, usersTable.id)
-            )
-            .where(eq(usersTable.nik, credentials.nik))
-            .limit(1);
+          .select({
+            id: usersTable.id,
+            name: usersTable.name,
+            role: usersTable.role,
+            nik: usersTable.nik,
+            password: credentialsTable.password,
+          })
+          .from(credentialsTable)
+          .innerJoin(
+            usersTable,
+            eq(credentialsTable.userId, usersTable.id)
+          )
+          .where(eq(usersTable.nik, credentials.nik))
+          .limit(1);
 
-          if (!userCred || userCred.length === 0 || userCred[0].role === "user") {
+          if (!userCred || userCred.length === 0) {
             return null;
           }
-
+          
           const user = userCred[0] as {
             id: number;
             name: string;
