@@ -35,6 +35,38 @@ const mutator = (url: string, { arg }: { arg: unknown }) =>
     return res.json();
   });
 
+  // Helper to get current year
+const getCurrentYear = () => new Date().getFullYear();
+
+// Generate years array starting from current year back to 2023
+const generateYears = () => {
+  const currentYear = getCurrentYear();
+  const years = [];
+  for (let year = currentYear; year >= 2023; year--) {
+    years.push(year);
+  }
+  return years;
+};
+
+// Get month number from name (Indonesian)
+const getMonthNumber = (monthName: string) => {
+  const monthMap: Record<string, number> = {
+    "Januari": 1,
+    "Februari": 2,
+    "Maret": 3,
+    "April": 4,
+    "Mei": 5,
+    "Juni": 6,
+    "Juli": 7,
+    "Agustus": 8,
+    "September": 9,
+    "Oktober": 10,
+    "November": 11,
+    "Desember": 12
+  };
+  return monthMap[monthName] || null;
+};
+
 export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   const getUsage = (meter: ReportType) =>
     meter.meterNow && meter.meterBefore
@@ -44,7 +76,10 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
-  const years = [2025, 2024, 2023];
+
+  // Years are now dynamically generated
+  const years = generateYears();
+  
   const months = [
     "Januari",
     "Februari",
@@ -59,20 +94,84 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
     "November",
     "Desember",
   ];
-  const regions = ["Semua Wilayah", "Region 1", "Region 2", "Region 3"];
 
-  const [selectedYear, setSelectedYear] = useState(2025);
-  const [selectedMonth, setSelectedMonth] = useState("April");
+  // Initialize with current date values
+  const currentDate = new Date();
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(months[currentDate.getMonth()]);
   const [selectedRegion, setSelectedRegion] = useState("Semua Wilayah");
+
+  // Store available regions from API response
+  const [availableRegions, setAvailableRegions] = useState<string[]>(["Semua Wilayah"]);
+
+  // Build the API URL with query parameters
+  const buildApiUrl = () => {
+    const params = new URLSearchParams();
+    
+    // Add year filter if not current year (optional: remove this condition to always include year)
+    if (selectedYear) {
+      params.append("year", selectedYear.toString());
+    }
+    
+    // Add month filter if selected
+    const monthNumber = getMonthNumber(selectedMonth);
+    if (monthNumber) {
+      params.append("month", monthNumber.toString());
+    }
+    
+    // Add region filter if not "Semua Wilayah"
+    if (selectedRegion && selectedRegion !== "Semua Wilayah") {
+      params.append("region", selectedRegion);
+    }
+    
+    return `/api/reports?${params.toString()}`;
+  };
+
+  // Fetch data with SWR using the built URL
   const {
-    data: reports,
-    // error,
+    data: reportResponse,
     isLoading,
     mutate,
-  } = useSWR<{ data: ReportType[]; totalUsage: number, totalUsagePaid: number }>(
-    `/api/reports?`,
-    fetcher
-  );
+  } = useSWR<{
+    data: ReportType[];
+    totalUsage: number;
+    totalUsagePaid: number;
+    availableRegions?: string[];
+    filters: {
+      month: number | null;
+      year: number | null;
+      region: string | null;
+    }
+  }>(buildApiUrl, fetcher);
+
+  // Extract reports data and other information
+  const reports = reportResponse?.data || [];
+  const totalUsage = reportResponse?.totalUsage || 0;
+  const totalUsagePaid = reportResponse?.totalUsagePaid || 0;
+
+  // Update available regions when API response includes them
+  useEffect(() => {
+    if (reportResponse?.availableRegions) {
+      // Always include "Semua Wilayah" as the first option
+      setAvailableRegions(["Semua Wilayah", ...reportResponse.availableRegions]);
+    }
+  }, [reportResponse?.availableRegions]);
+
+  // Handle filter changes
+  const handleYearChange = (year: number) => {
+    setSelectedYear(year);
+    setShowYearDropdown(false);
+  };
+
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    setShowMonthDropdown(false);
+  };
+
+  const handleRegionChange = (region: string) => {
+    setSelectedRegion(region);
+    setShowRegionDropdown(false);
+  };
   const { trigger, data } = useSWRMutation("/api/reports/payment", mutator);
 
   const handlePayment = async (id: number) => {
@@ -158,7 +257,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             key={year}
                             className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                             onClick={() => {
-                              setSelectedYear(year);
+                              handleYearChange(year);
                               setShowYearDropdown(false);
                             }}
                           >
@@ -186,7 +285,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             key={month}
                             className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                             onClick={() => {
-                              setSelectedMonth(month);
+                              handleMonthChange(month);
                               setShowMonthDropdown(false);
                             }}
                           >
@@ -209,12 +308,12 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                     </button>
                     {showRegionDropdown && (
                       <div className="absolute z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg w-48">
-                        {regions.map((region) => (
+                        {availableRegions.map((region) => (
                           <button
                             key={region}
                             className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                             onClick={() => {
-                              setSelectedRegion(region);
+                              handleRegionChange(region);
                               setShowRegionDropdown(false);
                             }}
                           >
@@ -297,7 +396,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                                 </div>
                               </td>
                             </tr>
-                          ) : reports?.data?.length === 0 ? (
+                          ) : reports?.length === 0 ? (
                             <tr>
                               <td
                                 colSpan={7}
@@ -307,7 +406,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                               </td>
                             </tr>
                           ) : (
-                            reports?.data?.map((report) => (
+                            reports?.map((report) => (
                               <tr key={report.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4">{report.name}</td>
                                 <td className="px-6 py-4">{report.nik}</td>
@@ -341,7 +440,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                               Total Penggunaan:
                             </td>
                             <td className="px-6 py-3 font-bold">
-                              {reports?.totalUsage.toFixed(1)} m³
+                              {totalUsage.toFixed(1)} m³
                             </td>
                             <td></td>
                           </tr>
@@ -402,7 +501,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                                 </div>
                               </td>
                             </tr>
-                          ) : reports?.data?.length === 0 ? (
+                          ) : reports?.length === 0 ? (
                             <tr>
                               <td
                                 colSpan={7}
@@ -412,7 +511,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                               </td>
                             </tr>
                           ) : (
-                            reports?.data?.map((report) => (
+                            reports?.map((report) => (
                               <tr key={report.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4">{report.name}</td>
                                 <td className="px-6 py-4">{report.nik}</td>
@@ -472,7 +571,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             </td>
                             <td className="px-6 py-3 font-bold">Rp{" "}
                               {(
-                                (reports?.totalUsagePaid || 0) * waterPricePerM3 ||
+                                (totalUsagePaid || 0) * waterPricePerM3 ||
                                 0
                               ).toLocaleString()}</td>
                             <td colSpan={2}></td>
@@ -487,7 +586,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             <td className="px-6 py-3 font-bold">
                               Rp{" "}
                               {(
-                                ((reports?.totalUsage || 0) - (reports?.totalUsagePaid || 0) || 0) * waterPricePerM3 ||
+                                ((totalUsage || 0) - (totalUsagePaid || 0) || 0) * waterPricePerM3 ||
                                 0
                               ).toLocaleString()}
                             </td>

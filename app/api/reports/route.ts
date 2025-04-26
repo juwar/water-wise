@@ -108,11 +108,20 @@ export async function GET(request: Request) {
         calculateUsage(reading.meterNow, reading.meterBefore) : 0);
     }, 0);
 
+    // Get all unique regions from the database
+    const regionsResult = await db
+      .selectDistinct({ region: users.region })
+      .from(users)
+      .where(eq(users.role, "user"));
+
+    const availableRegions = regionsResult.map(r => r.region);
+
     // Return the filtered data with totals
     return NextResponse.json({
       data: allUsers,
       totalUsage,
       totalUsagePaid,
+      availableRegions,
       filters: {
         month,
         year,
