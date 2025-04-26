@@ -44,13 +44,33 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+  const years = [2025, 2024, 2023];
+  const months = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
+  const regions = ["Semua Wilayah", "Region 1", "Region 2", "Region 3"];
+
+  const [selectedYear, setSelectedYear] = useState(2025);
+  const [selectedMonth, setSelectedMonth] = useState("April");
+  const [selectedRegion, setSelectedRegion] = useState("Semua Wilayah");
   const {
     data: reports,
     // error,
     isLoading,
     mutate,
   } = useSWR<{ data: ReportType[]; totalUsage: number, totalUsagePaid: number }>(
-    `/api/reports`,
+    `/api/reports?`,
     fetcher
   );
   const { trigger, data } = useSWRMutation("/api/reports/payment", mutator);
@@ -73,27 +93,6 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
 
   const contentRef = useRef<HTMLDivElement>(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
-
-  const years = [2025, 2024, 2023];
-  const months = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
-  ];
-  const regions = ["Semua Wilayah", "Region 1", "Region 2", "Region 3"];
-
-  const [selectedYear, setSelectedYear] = useState(2025);
-  const [selectedMonth, setSelectedMonth] = useState("April");
-  const [selectedRegion, setSelectedRegion] = useState("Semua Wilayah");
 
   return (
     <div className="container py-8" ref={contentRef}>
