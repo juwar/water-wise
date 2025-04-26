@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { users, meterReadings } from "@/db/schema";
-import { eq, and, sql, like } from "drizzle-orm";
+import { eq, and, sql, like, inArray } from "drizzle-orm";
 
 // Helper function to calculate usage
 const calculateUsage = (meterNow: number, meterBefore: number | null) => {
@@ -16,7 +16,7 @@ const calculateUsage = (meterNow: number, meterBefore: number | null) => {
 };
 
 // Helper function to ensure number type
-const ensureNumber = (value: number | null): number => {
+const ensureNumber = (value: number | null | undefined): number => {
   return value ?? 0;
 };
 
@@ -32,71 +32,126 @@ export async function GET(request: Request) {
     const month = searchParams.get("month") ? parseInt(searchParams.get("month")!) : null;
     const year = searchParams.get("year") ? parseInt(searchParams.get("year")!) : null;
     const region = searchParams.get("region");
-
-    // Build where conditions
-    const whereConditions = [eq(users.role, "user")];
     
-    // Add region filter if provided
-    if (region) {
-      whereConditions.push(like(users.region, `%${region}%`));
-    }
-
-    // Build base query with all conditions
-    const query = db
-      .select({
-        id: users.id,
-        name: users.name,
-        nik: users.nik,
-        region: users.region,
-        createdAt: users.createdAt,
-        address: users.address,
-        readingId: meterReadings.id,
-        meterNow: meterReadings.meterNow,
-        meterBefore: meterReadings.meterBefore,
-        recordedAt: meterReadings.recordedAt,
-        meterPaid: meterReadings.meterPaid,
-        lastPayment: meterReadings.lastPayment
-      })
+    // First, get all available regions
+    const regionsResult = await db
+      .selectDistinct({ region: users.region })
       .from(users)
-      .where(and(...whereConditions));
-
-    // Modify the join based on time filters
-    let timeFilterCondition = sql`1=1`; // Default condition that's always true
-
+      .where(eq(users.role, "user"));
+    
+    const availableRegions = regionsResult.map(r => r.region);
+    
+    // For time filtering, we need to use raw SQL
+    // First, get the IDs of the latest meter readings for each user within the time period
+    let latestReadingsQuery;
+    
     if (month && year) {
       // Filter by specific month and year
-      timeFilterCondition = sql`EXTRACT(MONTH FROM ${meterReadings.recordedAt}) = ${month} AND EXTRACT(YEAR FROM ${meterReadings.recordedAt}) = ${year}`;
+      latestReadingsQuery = sql`
+        SELECT DISTINCT ON (user_id) id, user_id
+        FROM meter_readings
+        WHERE EXTRACT(MONTH FROM recorded_at) = ${month} AND EXTRACT(YEAR FROM recorded_at) = ${year}
+        ORDER BY user_id, recorded_at DESC
+      `;
     } else if (month) {
-      // Filter by month only (any year)
-      timeFilterCondition = sql`EXTRACT(MONTH FROM ${meterReadings.recordedAt}) = ${month}`;
+      // Filter by month only
+      latestReadingsQuery = sql`
+        SELECT DISTINCT ON (user_id) id, user_id
+        FROM meter_readings
+        WHERE EXTRACT(MONTH FROM recorded_at) = ${month}
+        ORDER BY user_id, recorded_at DESC
+      `;
     } else if (year) {
-      // Filter by year only (any month)
-      timeFilterCondition = sql`EXTRACT(YEAR FROM ${meterReadings.recordedAt}) = ${year}`;
+      // Filter by year only
+      latestReadingsQuery = sql`
+        SELECT DISTINCT ON (user_id) id, user_id
+        FROM meter_readings
+        WHERE EXTRACT(YEAR FROM recorded_at) = ${year}
+        ORDER BY user_id, recorded_at DESC
+      `;
+    } else {
+      // No time filters
+      latestReadingsQuery = sql`
+        SELECT DISTINCT ON (user_id) id, user_id
+        FROM meter_readings
+        ORDER BY user_id, recorded_at DESC
+      `;
     }
+    
+    // Execute the query to get latest reading IDs
+    const latestReadingsResult = await db.execute(latestReadingsQuery);
+    console.log("🚀 ~ GET ~ latestReadingsResult:", latestReadingsResult)
+    
+    // Extract user IDs and reading IDs
+    const readingIds: number[] = [];
+    const userIds: number[] = [];
+    
+    // Handle the result structure correctly
+    for (const row of latestReadingsResult) {
+      if (row.id !== undefined && row.user_id !== undefined) {
+        readingIds.push(Number(row.id));
+        userIds.push(Number(row.user_id));
+      }
+    }
+    
+    // If we have time filters but no readings match, return empty data
+    if ((month || year) && readingIds.length === 0) {
+      return NextResponse.json({
+        data: [],
+        totalUsage: 0,
+        totalUsagePaid: 0,
+        availableRegions,
+        filters: { month, year, region }
+      });
+    }
+    
+    // Build user filter conditions
+    const userWhereConditions = [eq(users.role, "user")];
+    
+    // Add region filter if provided
+    if (region && region !== "Semua Wilayah") {
+      userWhereConditions.push(like(users.region, `%${region}%`));
+    }
+    
+    // Add user ID filter if we have time filters
+    if ((month || year) && userIds.length > 0) {
+      userWhereConditions.push(inArray(users.id, userIds));
+    }
+    
+    // Get users with the applied filters
+    const filteredUsers = await db
+      .select()
+      .from(users)
+      .where(and(...userWhereConditions));
 
-    // Execute the query with a complex join that respects the time filtering
-    const results = await query
-      .leftJoin(
-        meterReadings,
-        and(
-          eq(users.id, meterReadings.userId),
-          sql`${meterReadings.id} IN (
-            SELECT id FROM meter_readings mr2
-            WHERE mr2.user_id = ${users.id}
-            AND ${timeFilterCondition}
-            ORDER BY mr2.recorded_at DESC
-            LIMIT 1
-          )`
-        )
-      );
-
-    // Process the results
-    const allUsers = results.map(record => ({
-      ...record,
-      meterNow: ensureNumber(record.meterNow),
-      meterBefore: ensureNumber(record.meterBefore),
-      meterPaid: ensureNumber(record.meterPaid),
-    }));
+    
+    // Get the meter readings for these users (only the ones that match our criteria)
+    const filteredReadings = readingIds.length > 0 ? 
+      await db
+        .select()
+        .from(meterReadings)
+        .where(inArray(meterReadings.id, readingIds)) : 
+      [];
+    
+    // Combine users with their readings
+    const allUsers = filteredUsers.map(user => {
+      const reading = filteredReadings.find(r => r.userId === user.id);
+      
+      return {
+        id: user.id,
+        name: user.name,
+        nik: user.nik,
+        region: user.region,
+        createdAt: user.createdAt,
+        address: user.address,
+        readingId: reading?.id ?? null,
+        meterNow: ensureNumber(reading?.meterNow),
+        meterBefore: ensureNumber(reading?.meterBefore),
+        meterPaid: ensureNumber(reading?.meterPaid),
+        lastPayment: reading?.lastPayment ?? null,
+        recordedAt: reading?.recordedAt ?? null,
+      };
+    });
 
     // Calculate totals
     const totalUsage = allUsers.reduce((sum, reading) => {
@@ -107,14 +162,6 @@ export async function GET(request: Request) {
       return sum + (reading.meterPaid >= reading.meterNow && reading.lastPayment !== null ?
         calculateUsage(reading.meterNow, reading.meterBefore) : 0);
     }, 0);
-
-    // Get all unique regions from the database
-    const regionsResult = await db
-      .selectDistinct({ region: users.region })
-      .from(users)
-      .where(eq(users.role, "user"));
-
-    const availableRegions = regionsResult.map(r => r.region);
 
     // Return the filtered data with totals
     return NextResponse.json({
