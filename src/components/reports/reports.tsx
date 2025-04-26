@@ -9,7 +9,7 @@ import {
   Filter,
   Download,
   ChevronDown,
-  Search,
+  // Search,
   CreditCard,
   Loader,
 } from "lucide-react";
@@ -160,11 +160,13 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   // Handle filter changes
   const handleYearChange = (year: number) => {
     setSelectedYear(year);
+    setSelectedRegion("Semua Wilayah")
     setShowYearDropdown(false);
   };
 
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
+    setSelectedRegion("Semua Wilayah")
     setShowMonthDropdown(false);
   };
 
@@ -327,7 +329,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                   <div className="flex-1"></div>
 
                   {/* Search */}
-                  <div className="relative">
+                  {/* <div className="relative">
                     <input
                       type="text"
                       placeholder="Cari..."
@@ -337,7 +339,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                       size={16}
                       className="absolute left-3 top-2.5 text-gray-400"
                     />
-                  </div>
+                  </div> */}
 
                   {/* Export Button */}
                   <button

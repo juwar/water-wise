@@ -33,14 +33,6 @@ export async function GET(request: Request) {
     const year = searchParams.get("year") ? parseInt(searchParams.get("year")!) : null;
     const region = searchParams.get("region");
     
-    // First, get all available regions
-    const regionsResult = await db
-      .selectDistinct({ region: users.region })
-      .from(users)
-      .where(eq(users.role, "user"));
-    
-    const availableRegions = regionsResult.map(r => r.region);
-    
     // For time filtering, we need to use raw SQL
     // First, get the IDs of the latest meter readings for each user within the time period
     let latestReadingsQuery;
@@ -80,7 +72,6 @@ export async function GET(request: Request) {
     
     // Execute the query to get latest reading IDs
     const latestReadingsResult = await db.execute(latestReadingsQuery);
-    console.log("🚀 ~ GET ~ latestReadingsResult:", latestReadingsResult)
     
     // Extract user IDs and reading IDs
     const readingIds: number[] = [];
@@ -93,6 +84,14 @@ export async function GET(request: Request) {
         userIds.push(Number(row.user_id));
       }
     }
+
+    // First, get all available regions
+    const regionsResult = await db
+      .selectDistinct({ region: users.region })
+      .from(users)
+      .where(and(eq(users.role, "user"), inArray(users.id, userIds)));
+    
+    const availableRegions = regionsResult.map(r => r.region);
     
     // If we have time filters but no readings match, return empty data
     if ((month || year) && readingIds.length === 0) {
