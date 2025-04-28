@@ -520,9 +520,6 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                         </tfoot>
                       </table>
                     </div>
-                    {/* <div className="mt-4 text-sm text-gray-500">
-                      Menampilkan 3 dari 3 data
-                    </div> */}
                   </>
                 ) : (
                   <>
@@ -691,14 +688,14 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
       </div>
 
       {/* Edit Modal */}
-      {selectedInvoice && (
+      {selectedInvoice ? (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={() => setSelectedInvoice(0)}
         >
           <WaterInvoice invoiceData={invoiceData} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
