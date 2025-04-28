@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
+import WaterInvoice from "./invoice";
 interface AdminDashboardProps {
   waterPricePerM3: number;
 }
@@ -23,6 +24,17 @@ type ReportType = MeterReadings &
   Users & {
     readingId: number;
   };
+
+type InvoiceData = {
+  name: string;
+  nik: string;
+  region: string;
+  usage: number;
+  rate: number;
+  total: number;
+  status: string;
+  paymentDate: string;
+};
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 const mutator = (url: string, { arg }: { arg: unknown }) =>
@@ -35,7 +47,7 @@ const mutator = (url: string, { arg }: { arg: unknown }) =>
     return res.json();
   });
 
-  // Helper to get current year
+// Helper to get current year
 const getCurrentYear = () => new Date().getFullYear();
 
 // Generate years array starting from current year back to 2023
@@ -51,18 +63,18 @@ const generateYears = () => {
 // Get month number from name (Indonesian)
 const getMonthNumber = (monthName: string) => {
   const monthMap: Record<string, number> = {
-    "Januari": 1,
-    "Februari": 2,
-    "Maret": 3,
-    "April": 4,
-    "Mei": 5,
-    "Juni": 6,
-    "Juli": 7,
-    "Agustus": 8,
-    "September": 9,
-    "Oktober": 10,
-    "November": 11,
-    "Desember": 12
+    Januari: 1,
+    Februari: 2,
+    Maret: 3,
+    April: 4,
+    Mei: 5,
+    Juni: 6,
+    Juli: 7,
+    Agustus: 8,
+    September: 9,
+    Oktober: 10,
+    November: 11,
+    Desember: 12,
   };
   return monthMap[monthName] || null;
 };
@@ -76,10 +88,21 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(0);
+  const [invoiceData, setSetInvoiceData] = useState<InvoiceData>({
+    name: "",
+    nik: "",
+    region: "",
+    usage: 0,
+    rate: 0,
+    total: 0,
+    status: "",
+    paymentDate: "",
+  });
 
   // Years are now dynamically generated
   const years = generateYears();
-  
+
   const months = [
     "Januari",
     "Februari",
@@ -98,32 +121,36 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   // Initialize with current date values
   const currentDate = new Date();
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(months[currentDate.getMonth()]);
+  const [selectedMonth, setSelectedMonth] = useState(
+    months[currentDate.getMonth()]
+  );
   const [selectedRegion, setSelectedRegion] = useState("Semua Wilayah");
 
   // Store available regions from API response
-  const [availableRegions, setAvailableRegions] = useState<string[]>(["Semua Wilayah"]);
+  const [availableRegions, setAvailableRegions] = useState<string[]>([
+    "Semua Wilayah",
+  ]);
 
   // Build the API URL with query parameters
   const buildApiUrl = () => {
     const params = new URLSearchParams();
-    
+
     // Add year filter if not current year (optional: remove this condition to always include year)
     if (selectedYear) {
       params.append("year", selectedYear.toString());
     }
-    
+
     // Add month filter if selected
     const monthNumber = getMonthNumber(selectedMonth);
     if (monthNumber) {
       params.append("month", monthNumber.toString());
     }
-    
+
     // Add region filter if not "Semua Wilayah"
     if (selectedRegion && selectedRegion !== "Semua Wilayah") {
       params.append("region", selectedRegion);
     }
-    
+
     return `/api/reports?${params.toString()}`;
   };
 
@@ -141,7 +168,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
       month: number | null;
       year: number | null;
       region: string | null;
-    }
+    };
   }>(buildApiUrl, fetcher);
 
   // Extract reports data and other information
@@ -153,20 +180,23 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
   useEffect(() => {
     if (reportResponse?.availableRegions) {
       // Always include "Semua Wilayah" as the first option
-      setAvailableRegions(["Semua Wilayah", ...reportResponse.availableRegions]);
+      setAvailableRegions([
+        "Semua Wilayah",
+        ...reportResponse.availableRegions,
+      ]);
     }
   }, [reportResponse?.availableRegions]);
 
   // Handle filter changes
   const handleYearChange = (year: number) => {
     setSelectedYear(year);
-    setSelectedRegion("Semua Wilayah")
+    setSelectedRegion("Semua Wilayah");
     setShowYearDropdown(false);
   };
 
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
-    setSelectedRegion("Semua Wilayah")
+    setSelectedRegion("Semua Wilayah");
     setShowMonthDropdown(false);
   };
 
@@ -187,16 +217,70 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
     }
   };
 
+  const handleShowInvoice = (id: number) => {
+    setSelectedInvoice(id);
+    const data = reports?.filter((x) => x?.readingId === id)[0];
+    setSetInvoiceData({
+      name: data.name,
+      nik: data.nik,
+      region: data.region,
+      usage: getUsage(data),
+      rate: waterPricePerM3,
+      total: getUsage(data) * waterPricePerM3 || 0,
+      status: data.meterNow > data.meterPaid ? "Tertunda" : "Lunas",
+      paymentDate: data?.lastPayment
+        ? new Date(data.lastPayment as Date).toLocaleDateString()
+        : "- ",
+    });
+  };
+
   useEffect(() => {
-    mutate()
-  }, [data?.success])
-  
+    mutate();
+  }, [data?.success]);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const reactToPrintFn = useReactToPrint({ contentRef });
 
   return (
     <div className="container py-8" ref={contentRef}>
+      <style type="text/css" media="print">
+        {`
+          @media print {
+            /* Fit content to page width */
+            table {
+              width: 100% !important;
+              table-layout: fixed !important;
+            }
+            
+            /* Adjust font size for better fit */
+            td, th {
+              font-size: 10pt !important;
+              padding: 4px !important;
+            }
+            
+            /* Hide any unnecessary elements when printing */
+            .wrap-text {
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+              white-space: normal;
+            }
+
+            .no-print {
+              display: none !important;
+            }
+            
+            /* Ensure page breaks don't split rows */
+            tr {
+              page-break-inside: avoid !important;
+            }
+            
+            /* Adjust page margins */
+            @page {
+              margin: 0.5cm;
+            }
+          }
+        `}
+      </style>
       <div className="flex flex-col gap-8">
         {/* Main Content */}
         <main className="flex-1">
@@ -328,19 +412,6 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
 
                   <div className="flex-1"></div>
 
-                  {/* Search */}
-                  {/* <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Cari..."
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-64 text-sm"
-                    />
-                    <Search
-                      size={16}
-                      className="absolute left-3 top-2.5 text-gray-400"
-                    />
-                  </div> */}
-
                   {/* Export Button */}
                   <button
                     className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center space-x-2 text-sm hover:bg-green-700"
@@ -366,7 +437,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             <th className="px-6 py-3 text-left font-medium">
                               Pengguna
                             </th>
-                            <th className="px-6 py-3 text-left font-medium">
+                            <th className="wrap-text px-6 py-3 text-left font-medium">
                               NIK
                             </th>
                             <th className="px-6 py-3 text-left font-medium">
@@ -411,7 +482,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             reports?.map((report) => (
                               <tr key={report.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4">{report.name}</td>
-                                <td className="px-6 py-4">{report.nik}</td>
+                                <td className="wrap-text px-6 py-4">{report.nik}</td>
                                 <td className="px-6 py-4">{report.region}</td>
                                 <td className="px-6 py-4">{`${
                                   report.meterBefore || report.meterNow
@@ -465,7 +536,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             <th className="px-6 py-3 text-left font-medium">
                               Pengguna
                             </th>
-                            <th className="px-6 py-3 text-left font-medium">
+                            <th className="wrap-text px-6 py-3 text-left font-medium">
                               NIK
                             </th>
                             <th className="px-6 py-3 text-left font-medium">
@@ -516,7 +587,7 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             reports?.map((report) => (
                               <tr key={report.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4">{report.name}</td>
-                                <td className="px-6 py-4">{report.nik}</td>
+                                <td className="wrap-text px-6 py-4">{report.nik}</td>
                                 <td className="px-6 py-4">{report.region}</td>
                                 <td className="px-6 py-4">
                                   {`${getUsage(report)} m³` || "N/A"}
@@ -542,22 +613,35 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                                   )}
                                 </td>
                                 <td className="px-6 py-4">
-                                  {report.meterPaid >= report.meterNow && report?.lastPayment
+                                  {report.meterPaid >= report.meterNow &&
+                                  report?.lastPayment
                                     ? new Date(
                                         report.lastPayment as Date
                                       ).toLocaleDateString()
-                                    : "- "}
+                                    : "-"}
                                 </td>
                                 <td className="px-6 py-4">
-                                  <button
-                                    onClick={() =>
-                                      handlePayment(report?.readingId)
-                                    }
-                                    className="px-3 py-1 bg-blue-600 text-white rounded flex items-center space-x-1 text-xs hover:bg-blue-700"
-                                  >
-                                    <CreditCard size={12} />
-                                    <span>Bayar</span>
-                                  </button>
+                                  {report.meterNow > report.meterPaid ? (
+                                    <button
+                                      onClick={() =>
+                                        handlePayment(report?.readingId)
+                                      }
+                                      className="px-3 py-1 bg-blue-600 text-white rounded flex items-center space-x-1 text-xs hover:bg-blue-700"
+                                    >
+                                      <CreditCard size={12} />
+                                      <span>Bayar</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        handleShowInvoice(report?.readingId)
+                                      }
+                                      className="px-3 py-1 bg-green-600 text-white rounded flex items-center space-x-1 text-xs hover:bg-green-700"
+                                    >
+                                      <CreditCard size={12} />
+                                      <span>Cetak</span>
+                                    </button>
+                                  )}
                                 </td>
                               </tr>
                             ))
@@ -571,11 +655,12 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             >
                               Total Pendapatan:
                             </td>
-                            <td className="px-6 py-3 font-bold">Rp{" "}
+                            <td className="px-6 py-3 font-bold">
+                              Rp{" "}
                               {(
-                                (totalUsagePaid || 0) * waterPricePerM3 ||
-                                0
-                              ).toLocaleString()}</td>
+                                (totalUsagePaid || 0) * waterPricePerM3 || 0
+                              ).toLocaleString()}
+                            </td>
                             <td colSpan={2}></td>
                           </tr>
                           <tr className="bg-yellow-50">
@@ -588,8 +673,8 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
                             <td className="px-6 py-3 font-bold">
                               Rp{" "}
                               {(
-                                ((totalUsage || 0) - (totalUsagePaid || 0) || 0) * waterPricePerM3 ||
-                                0
+                                ((totalUsage || 0) - (totalUsagePaid || 0) ||
+                                  0) * waterPricePerM3 || 0
                               ).toLocaleString()}
                             </td>
                             <td colSpan={2}></td>
@@ -604,6 +689,16 @@ export function Reports({ waterPricePerM3 }: AdminDashboardProps) {
           </div>
         </main>
       </div>
+
+      {/* Edit Modal */}
+      {selectedInvoice && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setSelectedInvoice(0)}
+        >
+          <WaterInvoice invoiceData={invoiceData} />
+        </div>
+      )}
     </div>
   );
 }

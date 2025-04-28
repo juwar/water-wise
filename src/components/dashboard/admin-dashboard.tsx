@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { EditableMeter } from "@/components/meter-readings/editable-meter";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Users, CreditCard, Activity } from "lucide-react";
+import { Users, CreditCard, Activity, Edit, X } from "lucide-react";
+import useSWRMutation from "swr/mutation";
 
 interface UserStats {
   id: number;
@@ -36,6 +37,16 @@ interface AdminDashboardProps {
   usersWithStats: Array<UserStats>;
 }
 
+const mutator = (url: string, { arg }: { arg: unknown }) =>
+  fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(arg),
+  }).then((res) => {
+    if (!res.ok) throw new Error("Failed to mutate");
+    return res.json();
+  });
+
 export function AdminDashboard({
   userName,
   role,
@@ -52,10 +63,42 @@ export function AdminDashboard({
   const [selectedUser, setSelectedUser] = useState<
     (typeof usersWithStats)[0] | null
   >(null);
+  const [newWaterPricePerM3, setNewWaterPricePerM3] =
+    useState<number>(waterPricePerM3);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [newPrice, setNewPrice] = useState<string>("");
+
+  const { trigger: updateWaterPrice } = useSWRMutation("/api/water-price", mutator);
+
   const getUsage = (user: UserStats) =>
     user.meterNow && user.meterBefore
       ? user.meterNow - user.meterBefore
       : user.meterNow || 0;
+
+  const handleOpenModal = () => {
+    setNewPrice(newWaterPricePerM3.toString());
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const handleSave = async () => {
+    const parsedPrice = parseFloat(newPrice);
+    if (!isNaN(parsedPrice) && parsedPrice > 0) {
+      try {
+        await updateWaterPrice({
+          value: parsedPrice.toString(),
+        });
+        setNewWaterPricePerM3(parsedPrice);
+        setIsEditModalOpen(false);
+      } catch (err: unknown) {
+        const error = err as Error;
+        alert(error.message);
+      }
+    }
+  };
 
   return (
     <div className="container py-8">
@@ -101,8 +144,18 @@ export function AdminDashboard({
                 <h3 className="text-lg font-medium text-emerald-800">
                   Harga Air
                 </h3>
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <CreditCard className="h-5 w-5 text-emerald-600" />
+                <div className="flex gap-2">
+                  {role === "admin" ? (
+                    <button
+                      onClick={handleOpenModal}
+                      className="p-2 bg-emerald-200 rounded-lg hover:bg-emerald-300 transition-colors"
+                    >
+                      <Edit className="h-5 w-5 text-emerald-600" />
+                    </button>
+                  ) : null}
+                  <div className="p-2 bg-emerald-100 rounded-lg">
+                    <CreditCard className="h-5 w-5 text-emerald-600" />
+                  </div>
                 </div>
               </div>
 
@@ -113,7 +166,7 @@ export function AdminDashboard({
                   </span>
                   <div className="flex items-baseline">
                     <span className="text-3xl font-bold text-emerald-800">
-                      Rp {waterPricePerM3.toLocaleString()}
+                      Rp {newWaterPricePerM3.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -258,7 +311,7 @@ export function AdminDashboard({
                     </td>
                     <td className="p-4">
                       {`Rp ${(
-                        getUsage(userStats) * waterPricePerM3
+                        getUsage(userStats) * newWaterPricePerM3
                       ).toLocaleString()}` || "N/A"}
                     </td>
                     <td className="p-4">
@@ -300,6 +353,57 @@ export function AdminDashboard({
           open={!!selectedUser}
           onOpenChange={(open) => !open && setSelectedUser(null)}
         />
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Edit Harga Air
+              </h3>
+              <button
+                onClick={handleCloseModal}
+                className="p-1 rounded-full hover:bg-gray-100"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label
+                htmlFor="waterPrice"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Harga Per Meter Kubik (Rp)
+              </label>
+              <input
+                type="number"
+                id="waterPrice"
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="Masukkan harga baru"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCloseModal}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

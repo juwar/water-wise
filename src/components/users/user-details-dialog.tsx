@@ -248,7 +248,6 @@ export function UserDetailsDialog({
                   value={user.nik}
                   size={200}
                 />
-                <p className="text-sm text-muted-foreground">NIK: {user.nik}</p>
               </div>
             </div>
 
