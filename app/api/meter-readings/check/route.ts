@@ -36,7 +36,9 @@ export async function GET(req: NextRequest) {
       .select({
         meterNow: meterReadings.meterNow,
         meterBefore: meterReadings.meterBefore,
-        recordedAt: meterReadings.recordedAt,
+        meterPaid: meterReadings.meterPaid,
+        lastPayment: meterReadings?.lastPayment ?? null,
+        recordedAt: meterReadings?.recordedAt ?? null,
       })
       .from(meterReadings)
       .where(eq(meterReadings.userId, userResult[0].id))
